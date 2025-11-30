@@ -32,7 +32,7 @@ function ExerciseForm({ onSubmit, onCancel }) {
     e.preventDefault();
     setErrors([]);
     
-    const tagsArray = formData.tags
+    const tagsArray = (formData.tags || '')
       .split(',')
       .map(tag => tag.trim())
       .filter(tag => tag.length > 0);

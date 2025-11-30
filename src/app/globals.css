@@ -12,6 +12,7 @@
   --text-color: #2d2d2d;
   --timeline-line-color: #c9b8d9;
   --card-shadow: 0 4px 20px rgba(107, 77, 138, 0.15);
+  --hamburger-line-spacing: 9px;
 }
 
 body {
@@ -431,7 +432,7 @@ body {
 }
 
 .hamburger.active .hamburger-line:nth-child(1) {
-  transform: translateY(9px) rotate(45deg);
+  transform: translateY(var(--hamburger-line-spacing)) rotate(45deg);
 }
 
 .hamburger.active .hamburger-line:nth-child(2) {
@@ -439,7 +440,7 @@ body {
 }
 
 .hamburger.active .hamburger-line:nth-child(3) {
-  transform: translateY(-9px) rotate(-45deg);
+  transform: translateY(calc(-1 * var(--hamburger-line-spacing))) rotate(-45deg);
 }
 
 /* Mobile Responsive */
