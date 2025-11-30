@@ -24,6 +24,7 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
     level: session?.level || LEVELS[0]
   });
   const [errors, setErrors] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
@@ -33,13 +34,46 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
     }));
   };
 
-  const handleExerciseToggle = (exerciseId) => {
+  const handleAddExercise = (exerciseId) => {
     setFormData(prev => ({
       ...prev,
-      exercises: prev.exercises.includes(exerciseId)
-        ? prev.exercises.filter(id => id !== exerciseId)
-        : [...prev.exercises, exerciseId]
+      exercises: [...prev.exercises, exerciseId]
     }));
+  };
+
+  const handleRemoveExercise = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      exercises: prev.exercises.filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) return;
+
+    setFormData(prev => {
+      const newExercises = [...prev.exercises];
+      const [draggedItem] = newExercises.splice(draggedIndex, 1);
+      newExercises.splice(dropIndex, 0, draggedItem);
+      return { ...prev, exercises: newExercises };
+    });
+    
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   const handleSubmit = (e) => {
@@ -51,6 +85,9 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
       setErrors(result.errors);
     }
   };
+
+  // Create exercise lookup map
+  const exerciseMap = new Map(exercises.map(e => [e.id, e]));
 
   return (
     <form onSubmit={handleSubmit} className="session-form">
@@ -143,29 +180,67 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
       </div>
 
       <div className="form-group">
-        <label id="exercises-label">Übungen auswählen *</label>
+        <label id="exercises-label">Übungen hinzufügen *</label>
+        <p className="exercise-hint">Klicken Sie auf eine Übung, um sie hinzuzufügen (mehrfach möglich)</p>
         <div className="exercise-selector" role="group" aria-labelledby="exercises-label">
           {exercises.length === 0 ? (
             <p className="no-exercises">Keine Übungen verfügbar. Erstellen Sie zuerst Übungen.</p>
           ) : (
             exercises.map(exercise => (
-              <label key={exercise.id} className="exercise-option">
-                <input
-                  type="checkbox"
-                  checked={formData.exercises.includes(exercise.id)}
-                  onChange={() => handleExerciseToggle(exercise.id)}
-                  aria-label={`${exercise.title} (${exercise.duration_minutes} Minuten)`}
-                />
+              <button
+                type="button"
+                key={exercise.id}
+                className="exercise-add-btn"
+                onClick={() => handleAddExercise(exercise.id)}
+                aria-label={`${exercise.title} hinzufügen (${exercise.duration_minutes} Minuten)`}
+              >
+                <span className="exercise-add-icon">➕</span>
                 <span className="exercise-label">
                   {exercise.title} ({exercise.duration_minutes} Min.)
                 </span>
-              </label>
+              </button>
             ))
           )}
         </div>
-        <p className="selected-count">
-          {formData.exercises.length} Übung(en) ausgewählt
-        </p>
+      </div>
+
+      <div className="form-group">
+        <label>Ausgewählte Übungen ({formData.exercises.length})</label>
+        <p className="exercise-hint">Ziehen Sie die Übungen, um die Reihenfolge zu ändern</p>
+        <div className="selected-exercises-list">
+          {formData.exercises.length === 0 ? (
+            <p className="no-exercises">Noch keine Übungen ausgewählt</p>
+          ) : (
+            formData.exercises.map((exerciseId, idx) => {
+              const exercise = exerciseMap.get(exerciseId);
+              if (!exercise) return null;
+              return (
+                <div
+                  key={`${exerciseId}-${idx}`}
+                  className={`selected-exercise-item ${draggedIndex === idx ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <span className="drag-handle">☰</span>
+                  <span className="exercise-number">{idx + 1}.</span>
+                  <span className="exercise-name">{exercise.title}</span>
+                  <span className="exercise-duration">({exercise.duration_minutes} Min.)</span>
+                  <button
+                    type="button"
+                    className="btn-remove-exercise"
+                    onClick={() => handleRemoveExercise(idx)}
+                    aria-label={`${exercise.title} entfernen`}
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       <div className="form-actions">
@@ -205,11 +280,11 @@ function SessionCard({ session, exercises, onEdit, onDelete }) {
       </div>
       <div className="session-exercises">
         <strong>Übungen:</strong>
-        <ul>
-          {sessionExercises.map(ex => (
-            <li key={ex.id}>{ex.title}</li>
+        <ol>
+          {sessionExercises.map((ex, idx) => (
+            <li key={`${ex.id}-${idx}`}>{ex.title}</li>
           ))}
-        </ul>
+        </ol>
       </div>
       <div className="session-card-actions">
         <button className="btn btn-edit" onClick={() => onEdit(session)}>
