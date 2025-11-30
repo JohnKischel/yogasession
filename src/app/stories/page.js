@@ -16,7 +16,8 @@ function StoryForm({ story, onSubmit, onCancel }) {
     title: story?.title || '',
     text: story?.text || '',
     mood: story?.mood || MOODS[0],
-    tags: story?.tags?.join(', ') || ''
+    tags: story?.tags?.join(', ') || '',
+    time: story?.time || 1
   });
   const [errors, setErrors] = useState([]);
 
@@ -39,7 +40,8 @@ function StoryForm({ story, onSubmit, onCancel }) {
     
     const result = onSubmit({
       ...formData,
-      tags: tagsArray
+      tags: tagsArray,
+      time: parseFloat(formData.time)
     });
     
     if (!result.success) {
@@ -100,6 +102,18 @@ function StoryForm({ story, onSubmit, onCancel }) {
             ))}
           </select>
         </div>
+        <div className="form-group">
+          <label htmlFor="time">Zeit (Minuten) *</label>
+          <input
+            type="number"
+            id="time"
+            name="time"
+            value={formData.time}
+            onChange={handleChange}
+            min="0.5"
+            step="0.5"
+          />
+        </div>
       </div>
 
       <div className="form-group">
@@ -133,6 +147,7 @@ function StoryCard({ story, onEdit, onDelete }) {
         <h3>📖 {story.title}</h3>
         <div className="session-badges">
           {story.mood && <span className="badge badge-category">{story.mood}</span>}
+          {story.time && <span className="badge badge-duration">⏱️ {story.time} Min.</span>}
           <span className="badge badge-level">Story</span>
         </div>
       </div>

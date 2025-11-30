@@ -100,6 +100,10 @@ export function validateStory(story) {
     errors.push('tags must not contain empty strings');
   }
   
+  if (typeof story.time !== 'number' || story.time < 0.5) {
+    errors.push('time is required and must be at least 0.5 minutes');
+  }
+  
   return errors;
 }
 
@@ -136,6 +140,7 @@ export function createStory(storyData) {
     text: storyData.text.trim(),
     mood: storyData.mood ? storyData.mood.trim() : '',
     tags: storyData.tags.filter(tag => typeof tag === 'string').map(tag => tag.trim()),
+    time: storyData.time,
     type: 'story' // Marker to distinguish from exercises in session items
   };
   
@@ -180,6 +185,7 @@ export function updateStory(id, storyData) {
     text: storyData.text.trim(),
     mood: storyData.mood ? storyData.mood.trim() : '',
     tags: storyData.tags.filter(tag => typeof tag === 'string').map(tag => tag.trim()),
+    time: storyData.time,
     type: 'story'
   };
   
