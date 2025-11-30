@@ -1,0 +1,32 @@
+[
+  {
+    "id": "1",
+    "title": "Morgen-Energie",
+    "description": "Eine belebende Session für einen energiereichen Start in den Tag.",
+    "story": "Beginne deinen Tag mit Energie und Fokus. Wir öffnen den Körper sanft und bauen Stärke auf.",
+    "duration_minutes": 30,
+    "exercises": ["1", "2", "6", "5"],
+    "category": "Morgen",
+    "level": "Anfänger"
+  },
+  {
+    "id": "2",
+    "title": "Abend-Entspannung",
+    "description": "Eine beruhigende Session zum Abschluss des Tages.",
+    "story": "Lasse den Tag los und bringe Körper und Geist zur Ruhe. Wir lösen Spannungen und bereiten dich auf erholsamen Schlaf vor.",
+    "duration_minutes": 30,
+    "exercises": ["3", "7", "4", "5"],
+    "category": "Abend",
+    "level": "Anfänger"
+  },
+  {
+    "id": "3",
+    "title": "Kraft und Balance",
+    "description": "Eine fordernde Session für Kraft und Gleichgewicht.",
+    "story": "Fordere dich heraus und finde dein Gleichgewicht. Wir bauen Stärke auf und schulen die Konzentration.",
+    "duration_minutes": 60,
+    "exercises": ["1", "2", "6", "3", "4", "7", "5"],
+    "category": "Kraft",
+    "level": "Fortgeschritten"
+  }
+]

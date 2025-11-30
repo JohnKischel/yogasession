@@ -22,7 +22,10 @@ yogasession/
 │   └── workflows/
 │       └── static.yml    # GitHub Pages Deployment
 ├── data/
-│   └── exercises.json    # Yoga-Übungen Datenbank
+│   ├── exercises.json    # Yoga-Übungen Datenbank
+│   └── sessions.json     # Session-Definitionen
+├── public/
+│   └── index.html        # Statische Website
 └── README.md
 ```
 
