@@ -1,0 +1,58 @@
+[
+  {
+    "id": "1",
+    "title": "Sonnengruß",
+    "description": "Eine fließende Abfolge von Positionen, die den gesamten Körper aufwärmt.",
+    "category": "Stehübungen",
+    "tags": ["aufwärmen", "flow", "ganzkörper"],
+    "duration_minutes": 5
+  },
+  {
+    "id": "2",
+    "title": "Krieger I",
+    "description": "Stehende Position zur Stärkung der Beine und Öffnung der Hüften.",
+    "category": "Stehübungen",
+    "tags": ["kraft", "balance", "beine"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "3",
+    "title": "Drehsitz",
+    "description": "Sitzende Drehposition zur Mobilisierung der Wirbelsäule.",
+    "category": "Sitzübungen",
+    "tags": ["wirbelsäule", "mobilität", "drehung"],
+    "duration_minutes": 4
+  },
+  {
+    "id": "4",
+    "title": "Kobra",
+    "description": "Liegende Rückbeuge zur Stärkung des unteren Rückens.",
+    "category": "Liegeübungen",
+    "tags": ["rücken", "kraft", "rückbeuge"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "5",
+    "title": "Shavasana",
+    "description": "Entspannungsposition zum Abschluss der Praxis.",
+    "category": "Liegeübungen",
+    "tags": ["entspannung", "meditation", "abschluss"],
+    "duration_minutes": 5
+  },
+  {
+    "id": "6",
+    "title": "Baum",
+    "description": "Einbeinige Balance-Position zur Verbesserung von Gleichgewicht und Konzentration.",
+    "category": "Balanceübungen",
+    "tags": ["balance", "konzentration", "stehend"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "7",
+    "title": "Liegende Drehung",
+    "description": "Sanfte Drehbewegung im Liegen zur Entspannung der Wirbelsäule.",
+    "category": "Drehübungen",
+    "tags": ["wirbelsäule", "entspannung", "drehung"],
+    "duration_minutes": 4
+  }
+]
