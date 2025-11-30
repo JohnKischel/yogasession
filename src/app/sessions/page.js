@@ -9,11 +9,12 @@ import {
   deleteSession 
 } from '../../lib/sessionStorage';
 import { getExercises } from '../../lib/exerciseStorage';
+import { getStories, isStoryId } from '../../lib/storyStorage';
 
 const CATEGORIES = ['Morgen', 'Abend', 'Kraft', 'Entspannung', 'Balance'];
 const LEVELS = ['Anfänger', 'Fortgeschritten', 'Alle Levels'];
 
-function SessionForm({ session, exercises, onSubmit, onCancel }) {
+function SessionForm({ session, exercises, stories, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     title: session?.title || '',
     description: session?.description || '',
@@ -38,6 +39,13 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
     setFormData(prev => ({
       ...prev,
       exercises: [...prev.exercises, exerciseId]
+    }));
+  };
+
+  const handleAddStory = (storyId) => {
+    setFormData(prev => ({
+      ...prev,
+      exercises: [...prev.exercises, storyId]
     }));
   };
 
@@ -88,6 +96,12 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
 
   // Create exercise lookup map
   const exerciseMap = new Map(exercises.map(e => [e.id, e]));
+  
+  // Create story lookup map
+  const storyMap = new Map(stories.map(s => [s.id, s]));
+  
+  // Combined map for all items
+  const itemMap = new Map([...exerciseMap, ...storyMap]);
 
   return (
     <form onSubmit={handleSubmit} className="session-form">
@@ -180,7 +194,7 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
       </div>
 
       <div className="form-group">
-        <label id="exercises-label">Übungen hinzufügen *</label>
+        <label id="exercises-label">Übungen hinzufügen</label>
         <p className="exercise-hint">Klicken Sie auf eine Übung, um sie hinzuzufügen (mehrfach möglich)</p>
         <div className="exercise-selector" role="group" aria-labelledby="exercises-label">
           {exercises.length === 0 ? (
@@ -196,7 +210,7 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
               >
                 <span className="exercise-add-icon">➕</span>
                 <span className="exercise-label">
-                  {exercise.title} ({exercise.duration_minutes} Min.)
+                  💪 {exercise.title} ({exercise.duration_minutes} Min.)
                 </span>
               </button>
             ))
@@ -205,30 +219,56 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
       </div>
 
       <div className="form-group">
-        <label>Ausgewählte Übungen ({formData.exercises.length})</label>
-        <p className="exercise-hint">Ziehen Sie die Übungen, um die Reihenfolge zu ändern</p>
+        <label id="stories-label">Story Elemente hinzufügen</label>
+        <p className="exercise-hint">Klicken Sie auf ein Story Element, um es hinzuzufügen</p>
+        <div className="exercise-selector" role="group" aria-labelledby="stories-label">
+          {stories.length === 0 ? (
+            <p className="no-exercises">Keine Story Elemente verfügbar. <Link href="/stories">Erstellen Sie Story Elemente</Link>.</p>
+          ) : (
+            stories.map(story => (
+              <button
+                type="button"
+                key={story.id}
+                className="exercise-add-btn story-add-btn"
+                onClick={() => handleAddStory(story.id)}
+                aria-label={`${story.title} hinzufügen`}
+              >
+                <span className="exercise-add-icon">➕</span>
+                <span className="exercise-label">
+                  📖 {story.title}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>Ausgewählte Elemente ({formData.exercises.length})</label>
+        <p className="exercise-hint">Ziehen Sie die Elemente, um die Reihenfolge zu ändern</p>
         <div className="selected-exercises-list">
           {formData.exercises.length === 0 ? (
-            <p className="no-exercises">Noch keine Übungen ausgewählt</p>
+            <p className="no-exercises">Noch keine Elemente ausgewählt</p>
           ) : (
-            formData.exercises.map((exerciseId, idx) => {
-              const exercise = exerciseMap.get(exerciseId);
-              if (!exercise) {
-                console.warn(`Exercise with ID "${exerciseId}" not found`);
+            formData.exercises.map((itemId, idx) => {
+              const isStory = isStoryId(itemId);
+              const item = itemMap.get(itemId);
+              if (!item) {
+                console.warn(`Item with ID "${itemId}" not found`);
                 return (
                   <div
-                    key={`missing-${exerciseId}-${idx}`}
+                    key={`missing-${itemId}-${idx}`}
                     className="selected-exercise-item missing"
                   >
                     <span className="exercise-number">{idx + 1}.</span>
                     <span className="exercise-name" style={{ color: '#c62828' }}>
-                      Übung nicht gefunden (ID: {exerciseId})
+                      Element nicht gefunden (ID: {itemId})
                     </span>
                     <button
                       type="button"
                       className="btn-remove-exercise"
                       onClick={() => handleRemoveExercise(idx)}
-                      aria-label="Fehlende Übung entfernen"
+                      aria-label="Fehlendes Element entfernen"
                     >
                       ✕
                     </button>
@@ -237,8 +277,8 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
               }
               return (
                 <div
-                  key={`${exerciseId}-${idx}`}
-                  className={`selected-exercise-item ${draggedIndex === idx ? 'dragging' : ''}`}
+                  key={`${itemId}-${idx}`}
+                  className={`selected-exercise-item ${isStory ? 'story-item' : ''} ${draggedIndex === idx ? 'dragging' : ''}`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, idx)}
                   onDragOver={handleDragOver}
@@ -247,13 +287,14 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
                 >
                   <span className="drag-handle">☰</span>
                   <span className="exercise-number">{idx + 1}.</span>
-                  <span className="exercise-name">{exercise.title}</span>
-                  <span className="exercise-duration">({exercise.duration_minutes} Min.)</span>
+                  <span className="exercise-name">{isStory ? '📖' : '💪'} {item.title}</span>
+                  {!isStory && <span className="exercise-duration">({item.duration_minutes} Min.)</span>}
+                  {isStory && <span className="exercise-duration">(Story)</span>}
                   <button
                     type="button"
                     className="btn-remove-exercise"
                     onClick={() => handleRemoveExercise(idx)}
-                    aria-label={`${exercise.title} entfernen`}
+                    aria-label={`${item.title} entfernen`}
                   >
                     ✕
                   </button>
@@ -276,17 +317,24 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
   );
 }
 
-function SessionCard({ session, exercises, onEdit, onDelete }) {
+function SessionCard({ session, exercises, stories, onEdit, onDelete }) {
   const exerciseMap = new Map(exercises.map(e => [e.id, e]));
-  const sessionExercises = session.exercises
+  const storyMap = new Map(stories.map(s => [s.id, s]));
+  const itemMap = new Map([...exerciseMap, ...storyMap]);
+  
+  const sessionItems = session.exercises
     .map(id => {
-      const exercise = exerciseMap.get(id);
-      if (!exercise) {
-        console.warn(`Exercise with ID "${id}" not found in session "${session.title}"`);
+      const item = itemMap.get(id);
+      if (!item) {
+        console.warn(`Item with ID "${id}" not found in session "${session.title}"`);
+        return null;
       }
-      return exercise;
+      return { ...item, isStory: isStoryId(id) };
     })
     .filter(Boolean);
+  
+  const exerciseCount = sessionItems.filter(item => !item.isStory).length;
+  const storyCount = sessionItems.filter(item => item.isStory).length;
 
   return (
     <div className="session-card">
@@ -303,13 +351,16 @@ function SessionCard({ session, exercises, onEdit, onDelete }) {
       )}
       <div className="session-meta">
         <span>⏱️ {session.duration_minutes} Minuten</span>
-        <span>🧘 {session.exercises.length} Übungen</span>
+        <span>💪 {exerciseCount} Übungen</span>
+        {storyCount > 0 && <span>📖 {storyCount} Story Elemente</span>}
       </div>
       <div className="session-exercises">
-        <strong>Übungen:</strong>
+        <strong>Ablauf:</strong>
         <ol>
-          {sessionExercises.map((ex, idx) => (
-            <li key={`${ex.id}-${idx}`}>{ex.title}</li>
+          {sessionItems.map((item, idx) => (
+            <li key={`${item.id}-${idx}`}>
+              {item.isStory ? '📖' : '💪'} {item.title}
+            </li>
           ))}
         </ol>
       </div>
@@ -328,12 +379,14 @@ function SessionCard({ session, exercises, onEdit, onDelete }) {
 export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
+  const [stories, setStories] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
 
   const loadData = useCallback(() => {
     setSessions(getSessions());
     setExercises(getExercises());
+    setStories(getStories());
   }, []);
 
   useEffect(() => {
@@ -390,6 +443,7 @@ export default function SessionsPage() {
           <SessionForm
             session={editingSession}
             exercises={exercises}
+            stories={stories}
             onSubmit={editingSession ? handleUpdate : handleCreate}
             onCancel={handleCancel}
           />
@@ -417,6 +471,7 @@ export default function SessionsPage() {
                     key={session.id}
                     session={session}
                     exercises={exercises}
+                    stories={stories}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                   />

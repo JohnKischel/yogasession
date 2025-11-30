@@ -1085,3 +1085,39 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Story Element Styles */
+.story-card {
+  background: linear-gradient(135deg, #fff8f0 0%, #fff5eb 100%);
+  border-left: 4px solid #e67e22;
+}
+
+.story-timeline-item .timeline-time.story-marker {
+  background: linear-gradient(135deg, #e67e22 0%, #f39c12 100%);
+}
+
+.story-add-btn {
+  background: #fff8f0 !important;
+  border-color: #f39c12 !important;
+}
+
+.story-add-btn:hover {
+  background: #ffecd2 !important;
+  border-color: #e67e22 !important;
+}
+
+.selected-exercise-item.story-item {
+  background: #fff8f0;
+  border-color: #f39c12;
+}
+
+.selected-exercise-item.story-item:hover {
+  border-color: #e67e22;
+}
+
+.form-hint {
+  color: var(--secondary-color);
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  font-style: italic;
+}
