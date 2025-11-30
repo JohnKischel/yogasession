@@ -91,15 +91,21 @@ export default function Home() {
 
   const handleScroll = useCallback(() => {
     if (!timelineContainerRef.current) return;
+    if (totalDurationMs <= 0) return;
     
     const container = timelineContainerRef.current;
+    const containerRect = container.getBoundingClientRect();
     const containerTop = container.offsetTop;
-    const containerHeight = container.scrollHeight;
+    const containerHeight = containerRect.height;
     const viewportHeight = window.innerHeight;
-    const maxScroll = containerTop + containerHeight - viewportHeight;
+    
+    // Calculate the scrollable range
+    const scrollStart = Math.max(0, containerTop - viewportHeight * 0.3);
+    const scrollEnd = containerTop + containerHeight - viewportHeight;
+    const scrollRange = Math.max(0, scrollEnd - scrollStart);
     
     const progress = Math.min(elapsedMs / totalDurationMs, 1);
-    const targetScrollY = containerTop + (maxScroll - containerTop) * progress;
+    const targetScrollY = scrollStart + scrollRange * progress;
     
     window.scrollTo({
       top: Math.max(0, targetScrollY),
@@ -107,11 +113,19 @@ export default function Home() {
     });
   }, [elapsedMs, totalDurationMs]);
 
+  // Throttled scroll effect - only update scroll position periodically
+  const lastScrollTimeRef = useRef(0);
+  const scrollThrottleMs = 100; // Update scroll every 100ms
+
   useEffect(() => {
-    if (isRunning) {
+    if (!isRunning) return;
+    
+    const now = performance.now();
+    if (now - lastScrollTimeRef.current >= scrollThrottleMs) {
       handleScroll();
+      lastScrollTimeRef.current = now;
     }
-  }, [isRunning, handleScroll]);
+  }, [isRunning, handleScroll, elapsedMs]);
 
   useEffect(() => {
     if (!isRunning) {
