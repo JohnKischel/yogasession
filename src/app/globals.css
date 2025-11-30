@@ -1121,3 +1121,173 @@ body {
   margin-top: 0.5rem;
   font-style: italic;
 }
+
+/* Floating Controls */
+.floating-controls {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+  box-shadow: 0 -4px 20px rgba(107, 77, 138, 0.15);
+  padding: 1rem;
+  backdrop-filter: blur(10px);
+}
+
+.floating-controls-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.floating-controls .session-timer {
+  width: 100%;
+}
+
+.floating-controls .timer-display {
+  font-size: 1.2rem;
+}
+
+.floating-controls .progress-bar {
+  margin-top: 0.5rem;
+  height: 6px;
+}
+
+.floating-controls .session-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-nav {
+  background: var(--accent-color);
+  color: var(--primary-color);
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  min-width: auto;
+}
+
+.btn-nav:hover:not(:disabled) {
+  background: var(--secondary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-sync {
+  background: #3498db;
+  color: white;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  animation: pulse 2s infinite;
+}
+
+.btn-sync:hover {
+  background: #2980b9;
+  transform: translateY(-2px);
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(52, 152, 219, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 152, 219, 0);
+  }
+}
+
+.floating-controls .btn-start {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  min-width: 120px;
+}
+
+.floating-controls .btn-reset {
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+}
+
+/* Add bottom padding to footer to account for floating controls */
+.footer {
+  padding-bottom: 8rem;
+}
+
+/* Active and Collapsed Timeline Item States */
+.timeline-item.active .exercise-card {
+  transform: scale(1.02);
+  box-shadow: 0 8px 30px rgba(107, 77, 138, 0.3);
+  border: 2px solid var(--primary-color);
+}
+
+.timeline-item.active .timeline-time {
+  transform: translateX(-50%) scale(1.1);
+  box-shadow: 0 4px 15px rgba(107, 77, 138, 0.3);
+}
+
+@media (max-width: 768px) {
+  .timeline-item.active .timeline-time {
+    transform: scale(1.1);
+  }
+}
+
+.timeline-item.past .exercise-card {
+  opacity: 0.6;
+}
+
+.timeline-item.past .timeline-time {
+  opacity: 0.6;
+}
+
+/* Collapsed description for non-active items */
+.exercise-description-collapsed {
+  color: #888;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* Transition for collapse/expand */
+.timeline-item {
+  transition: opacity 0.3s ease;
+}
+
+.timeline-item .exercise-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border 0.3s ease, opacity 0.3s ease;
+}
+
+/* Ensure items not yet reached maintain full visibility */
+.timeline-item:not(.past):not(.active) .exercise-card {
+  opacity: 1;
+}
+
+/* Magnifier zone indicator - visual hint for the active zone */
+.timeline-container::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 150px;
+  transform: translateY(-50%);
+  background: linear-gradient(to bottom, 
+    transparent 0%, 
+    rgba(107, 77, 138, 0.03) 20%, 
+    rgba(107, 77, 138, 0.05) 50%, 
+    rgba(107, 77, 138, 0.03) 80%, 
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
