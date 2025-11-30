@@ -89,6 +89,8 @@ export function validateSession(session) {
     errors.push('exercises is required and must be an array');
   } else if (session.exercises.some(id => typeof id !== 'string')) {
     errors.push('all exercise IDs must be strings');
+  } else if (session.exercises.length === 0) {
+    errors.push('at least one exercise or story element is required');
   }
   
   if (typeof session.duration_minutes !== 'number' || session.duration_minutes <= 0) {
