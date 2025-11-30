@@ -288,6 +288,9 @@ export default function Home() {
       setIsRunning(false);
     } else {
       if (elapsedMs >= totalDurationMs) {
+        // Update both ref and state immediately to ensure consistency
+        elapsedMsRef.current = 0;
+        startTimeRef.current = performance.now();
         setElapsedMs(0);
       }
       setIsRunning(true);
@@ -296,6 +299,9 @@ export default function Home() {
 
   const handleReset = () => {
     setIsRunning(false);
+    // Update both ref and state immediately to ensure consistency
+    elapsedMsRef.current = 0;
+    startTimeRef.current = performance.now();
     setElapsedMs(0);
     setUserScrolled(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -308,7 +314,12 @@ export default function Home() {
     const targetIndex = Math.max(0, currentItemIndex - 1);
     
     const targetItem = itemsWithTimes[targetIndex];
-    setElapsedMs(targetItem.startMs);
+    const newTime = targetItem.startMs;
+    
+    // Update both ref and state immediately to prevent animation loop from overwriting
+    elapsedMsRef.current = newTime;
+    startTimeRef.current = performance.now() - newTime;
+    setElapsedMs(newTime);
     setUserScrolled(false);
     
     // Scroll to the item
@@ -327,7 +338,12 @@ export default function Home() {
     const targetIndex = Math.min(itemsWithTimes.length - 1, currentItemIndex + 1);
     
     const targetItem = itemsWithTimes[targetIndex];
-    setElapsedMs(targetItem.startMs);
+    const newTime = targetItem.startMs;
+    
+    // Update both ref and state immediately to prevent animation loop from overwriting
+    elapsedMsRef.current = newTime;
+    startTimeRef.current = performance.now() - newTime;
+    setElapsedMs(newTime);
     setUserScrolled(false);
     
     // Scroll to the item
