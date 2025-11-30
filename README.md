@@ -1,18 +1,23 @@
 # Yoga Session Generator
 
-Eine Webanwendung zur Erstellung und Verwaltung von Yoga-Sessions.
+Eine Webanwendung zur Erstellung und Verwaltung von Yoga-Sessions mit Next.js.
 
 ## Über das Projekt
 
-Diese App ermöglicht es, individuelle Yoga-Sessions aus einer Sammlung von Übungen zu erstellen. 
+Diese App ermöglicht es, individuelle Yoga-Sessions aus einer Sammlung von Übungen zu erstellen und in einer interaktiven Timeline darzustellen.
 
 ### Funktionen
 
-- **Übungsdatenbank**: JSON-basierte Sammlung von Yoga-Übungen mit Tags und Beschreibungen
-- **Session-Generator**: Erstellen von Sessions mit variabler Länge (30 Min, 60 Min, 90 Min)
-- **Kategorien**: Übungen sind kategorisiert (z.B. Drehübungen, Stehübungen, Liegeübungen)
-- **Story-Modus**: Sessions können mit einer Geschichte/Erzählung hinterlegt werden
-- **Kurs-Verwaltung**: Sessions können zu Kursen zusammengefasst werden
+- **Timeline-Ansicht**: Sessions werden als scrollbare Timeline mit Zeitangaben dargestellt
+- **Startzeit-Auswahl**: Wähle die Startzeit deiner Session und alle Übungszeiten werden automatisch berechnet
+- **5 Yoga-Übungen**: Vorkonfigurierte Übungen (Sonnengruß, Krieger I, Herabschauender Hund, Kobra, Shavasana)
+- **Session-Übersicht**: Dauer, Level und Anzahl der Übungen auf einen Blick
+- **Responsive Design**: Optimiert für Desktop und Mobile
+- **Statische Generierung**: Next.js Static Export für schnelle Ladezeiten
+
+### Screenshot
+
+![Yoga Session Timeline](https://github.com/user-attachments/assets/e50c7d79-5946-4ecd-a7fe-e211e27f0c08)
 
 ## Projektstruktur
 
@@ -20,19 +25,51 @@ Diese App ermöglicht es, individuelle Yoga-Sessions aus einer Sammlung von Übu
 yogasession/
 ├── .github/
 │   └── workflows/
-│       └── static.yml    # GitHub Pages Deployment
+│       └── static.yml       # GitHub Pages Deployment
 ├── data/
-│   ├── exercises.json    # Yoga-Übungen Datenbank
-│   └── sessions.json     # Session-Definitionen
-├── public/
-│   └── index.html        # Statische Website
+│   ├── exercises.json       # Yoga-Übungen Datenbank (Legacy)
+│   └── sessions.json        # Session-Definitionen (Legacy)
+├── src/
+│   ├── app/
+│   │   ├── globals.css      # Globale Styles
+│   │   ├── layout.js        # App Layout
+│   │   └── page.js          # Hauptseite mit Timeline
+│   └── data/
+│       └── yoga-data.js     # Übungen und Session-Daten
+├── next.config.js           # Next.js Konfiguration
+├── package.json
 └── README.md
 ```
 
 ## Lokale Entwicklung
 
-Die Anwendung wird als statische Website bereitgestellt und kann lokal mit einem einfachen Webserver getestet werden.
+### Voraussetzungen
+
+- Node.js 18 oder höher
+- npm
+
+### Installation
+
+```bash
+npm install
+```
+
+### Entwicklungsserver starten
+
+```bash
+npm run dev
+```
+
+Die App ist dann unter [http://localhost:3000](http://localhost:3000) erreichbar.
+
+### Produktions-Build erstellen
+
+```bash
+npm run build
+```
+
+Der statische Export wird im `out/` Ordner erstellt.
 
 ## Deployment
 
-Die Website wird automatisch über GitHub Actions auf GitHub Pages deployed.
+Die Website wird automatisch über GitHub Actions auf GitHub Pages deployed, wenn Änderungen auf den `main` Branch gepusht werden.
