@@ -227,3 +227,43 @@ export function clearSessions() {
   
   localStorage.removeItem(STORAGE_KEY);
 }
+
+/**
+ * Reorder exercises in a session
+ * @param {string} id - Session ID
+ * @param {Array} newExerciseOrder - New array of exercise IDs in desired order
+ * @returns {Object} Result object with success status
+ */
+export function reorderSessionExercises(id, newExerciseOrder) {
+  if (!Array.isArray(newExerciseOrder)) {
+    return {
+      success: false,
+      errors: ['newExerciseOrder must be an array']
+    };
+  }
+  
+  if (newExerciseOrder.some(exerciseId => typeof exerciseId !== 'string')) {
+    return {
+      success: false,
+      errors: ['all exercise IDs must be strings']
+    };
+  }
+  
+  const sessions = getSessions();
+  const index = sessions.findIndex(s => s.id === id);
+  
+  if (index === -1) {
+    return {
+      success: false,
+      errors: ['Session not found']
+    };
+  }
+  
+  sessions[index].exercises = newExerciseOrder;
+  saveSessions(sessions);
+  
+  return {
+    success: true,
+    session: sessions[index]
+  };
+}
