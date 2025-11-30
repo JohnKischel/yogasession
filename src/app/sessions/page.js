@@ -10,11 +10,12 @@ import {
 } from '../../lib/sessionStorage';
 import { getExercises } from '../../lib/exerciseStorage';
 import { getStories, isStoryId } from '../../lib/storyStorage';
+import { getStoryBooks } from '../../lib/storyBookStorage';
 
 const CATEGORIES = ['Morgen', 'Abend', 'Kraft', 'Entspannung', 'Balance'];
 const LEVELS = ['Anfänger', 'Fortgeschritten', 'Alle Levels'];
 
-function SessionForm({ session, exercises, stories, onSubmit, onCancel }) {
+function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     title: session?.title || '',
     description: session?.description || '',
@@ -46,6 +47,14 @@ function SessionForm({ session, exercises, stories, onSubmit, onCancel }) {
     setFormData(prev => ({
       ...prev,
       exercises: [...prev.exercises, storyId]
+    }));
+  };
+
+  const handleAddStoryBook = (storyBook) => {
+    // Add all stories from the story book to the session
+    setFormData(prev => ({
+      ...prev,
+      exercises: [...prev.exercises, ...storyBook.storyIds]
     }));
   };
 
@@ -231,14 +240,45 @@ function SessionForm({ session, exercises, stories, onSubmit, onCancel }) {
                 key={story.id}
                 className="exercise-add-btn story-add-btn"
                 onClick={() => handleAddStory(story.id)}
-                aria-label={`${story.title} hinzufügen`}
+                aria-label={`${story.title} hinzufügen (${story.time} Minuten)`}
               >
                 <span className="exercise-add-icon">➕</span>
                 <span className="exercise-label">
-                  📖 {story.title}
+                  📖 {story.title} ({story.time} Min.)
                 </span>
               </button>
             ))
+          )}
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label id="storybooks-label">Story Books hinzufügen</label>
+        <p className="exercise-hint">Klicken Sie auf ein Story Book, um alle seine Story Elemente hinzuzufügen</p>
+        <div className="exercise-selector" role="group" aria-labelledby="storybooks-label">
+          {storyBooks.length === 0 ? (
+            <p className="no-exercises">Keine Story Books verfügbar. <Link href="/storybooks">Erstellen Sie Story Books</Link>.</p>
+          ) : (
+            storyBooks.map(storyBook => {
+              const bookStories = storyBook.storyIds
+                .map(id => storyMap.get(id))
+                .filter(Boolean);
+              const totalTime = bookStories.reduce((sum, s) => sum + (s.time || 0), 0);
+              return (
+                <button
+                  type="button"
+                  key={storyBook.id}
+                  className="exercise-add-btn storybook-add-btn"
+                  onClick={() => handleAddStoryBook(storyBook)}
+                  aria-label={`${storyBook.title} hinzufügen (${storyBook.storyIds.length} Stories, ${totalTime} Minuten)`}
+                >
+                  <span className="exercise-add-icon">➕</span>
+                  <span className="exercise-label">
+                    📚 {storyBook.title} ({storyBook.storyIds.length} Stories, {totalTime} Min.)
+                  </span>
+                </button>
+              );
+            })
           )}
         </div>
       </div>
@@ -289,7 +329,7 @@ function SessionForm({ session, exercises, stories, onSubmit, onCancel }) {
                   <span className="exercise-number">{idx + 1}.</span>
                   <span className="exercise-name">{isStory ? '📖' : '💪'} {item.title}</span>
                   {!isStory && <span className="exercise-duration">({item.duration_minutes} Min.)</span>}
-                  {isStory && <span className="exercise-duration">(Story)</span>}
+                  {isStory && <span className="exercise-duration">({item.time} Min.)</span>}
                   <button
                     type="button"
                     className="btn-remove-exercise"
@@ -380,6 +420,7 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [stories, setStories] = useState([]);
+  const [storyBooks, setStoryBooks] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
 
@@ -387,6 +428,7 @@ export default function SessionsPage() {
     setSessions(getSessions());
     setExercises(getExercises());
     setStories(getStories());
+    setStoryBooks(getStoryBooks());
   }, []);
 
   useEffect(() => {
@@ -444,6 +486,7 @@ export default function SessionsPage() {
             session={editingSession}
             exercises={exercises}
             stories={stories}
+            storyBooks={storyBooks}
             onSubmit={editingSession ? handleUpdate : handleCreate}
             onCancel={handleCancel}
           />
