@@ -28,6 +28,16 @@ function calculateItemTimings(sessionItems) {
   });
 }
 
+// Helper function to truncate text with ellipsis
+function truncateText(text, maxLength = 50) {
+  if (!text) return '';
+  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+}
+
+// Constants
+const USER_SCROLL_RESET_DELAY = 3000; // Reset auto-scroll after this many ms of user inactivity
+const SCROLL_THROTTLE_MS = 500; // Throttle scroll updates
+
 function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDragEnd, isDragging, isActive, isPast }) {
   const isStory = exercise.type === 'story';
   const durationMinutes = exercise.duration_minutes || 0;
@@ -81,9 +91,7 @@ function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDrag
           </>
         ) : (
           <p className="exercise-description-collapsed">
-            {isStory 
-              ? (exercise.text?.substring(0, 50) || '') + (exercise.text?.length > 50 ? '...' : '')
-              : (exercise.description?.substring(0, 50) || '') + (exercise.description?.length > 50 ? '...' : '')}
+            {truncateText(isStory ? exercise.text : exercise.description)}
           </p>
         )}
       </div>
@@ -208,7 +216,6 @@ export default function Home() {
 
   // Throttled scroll effect - only update scroll position periodically
   const lastScrollTimeRef = useRef(0);
-  const scrollThrottleMs = 500; // Update scroll every 500ms
 
   // Track manual scroll by user
   useEffect(() => {
@@ -216,11 +223,10 @@ export default function Home() {
     const handleUserScroll = () => {
       if (isRunning) {
         setUserScrolled(true);
-        // Reset after 3 seconds of no scrolling
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
           setUserScrolled(false);
-        }, 3000);
+        }, USER_SCROLL_RESET_DELAY);
       }
     };
 
@@ -238,7 +244,7 @@ export default function Home() {
     if (!isRunning) return;
     
     const now = performance.now();
-    if (now - lastScrollTimeRef.current >= scrollThrottleMs) {
+    if (now - lastScrollTimeRef.current >= SCROLL_THROTTLE_MS) {
       handleScroll();
       lastScrollTimeRef.current = now;
     }
@@ -299,8 +305,7 @@ export default function Home() {
   const handlePrevious = useCallback(() => {
     if (itemsWithTimes.length === 0) return;
     
-    let targetIndex = currentItemIndex - 1;
-    if (targetIndex < 0) targetIndex = 0;
+    const targetIndex = Math.max(0, currentItemIndex - 1);
     
     const targetItem = itemsWithTimes[targetIndex];
     setElapsedMs(targetItem.startMs);
@@ -319,10 +324,7 @@ export default function Home() {
   const handleNext = useCallback(() => {
     if (itemsWithTimes.length === 0) return;
     
-    let targetIndex = currentItemIndex + 1;
-    if (targetIndex >= itemsWithTimes.length) {
-      targetIndex = itemsWithTimes.length - 1;
-    }
+    const targetIndex = Math.min(itemsWithTimes.length - 1, currentItemIndex + 1);
     
     const targetItem = itemsWithTimes[targetIndex];
     setElapsedMs(targetItem.startMs);
