@@ -87,14 +87,6 @@ export default function Home() {
   const startTimeRef = useRef(null);
   const elapsedMsRef = useRef(0);
   const timelineContainerRef = useRef(null);
-  
-  // Auto-scroll and timer state
-  const [isRunning, setIsRunning] = useState(false);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const animationRef = useRef(null);
-  const startTimeRef = useRef(null);
-  const elapsedMsRef = useRef(0);
-  const timelineContainerRef = useRef(null);
 
   // Load sessions and exercises from localStorage
   useEffect(() => {
@@ -159,7 +151,6 @@ export default function Home() {
   }, [exercisesWithTimes, startTime]);
 
   const totalDurationMs = totalDuration * 60 * 1000;
-  const totalDurationMs = session.total_duration_minutes * 60 * 1000;
 
   // Keep elapsedMsRef in sync with elapsedMs state
   useEffect(() => {
