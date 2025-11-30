@@ -119,7 +119,13 @@ export default function Home() {
   // Get exercises for the current session
   const sessionExercises = useMemo(() => {
     return currentExerciseOrder
-      .map(id => exerciseMap.get(id))
+      .map(id => {
+        const exercise = exerciseMap.get(id);
+        if (!exercise) {
+          console.warn(`Exercise with ID "${id}" not found in exercise map`);
+        }
+        return exercise;
+      })
       .filter(Boolean);
   }, [currentExerciseOrder, exerciseMap]);
   

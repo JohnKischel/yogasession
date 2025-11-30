@@ -213,7 +213,28 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
           ) : (
             formData.exercises.map((exerciseId, idx) => {
               const exercise = exerciseMap.get(exerciseId);
-              if (!exercise) return null;
+              if (!exercise) {
+                console.warn(`Exercise with ID "${exerciseId}" not found`);
+                return (
+                  <div
+                    key={`missing-${exerciseId}-${idx}`}
+                    className="selected-exercise-item missing"
+                  >
+                    <span className="exercise-number">{idx + 1}.</span>
+                    <span className="exercise-name" style={{ color: '#c62828' }}>
+                      Übung nicht gefunden (ID: {exerciseId})
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-remove-exercise"
+                      onClick={() => handleRemoveExercise(idx)}
+                      aria-label="Fehlende Übung entfernen"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              }
               return (
                 <div
                   key={`${exerciseId}-${idx}`}
@@ -258,7 +279,13 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
 function SessionCard({ session, exercises, onEdit, onDelete }) {
   const exerciseMap = new Map(exercises.map(e => [e.id, e]));
   const sessionExercises = session.exercises
-    .map(id => exerciseMap.get(id))
+    .map(id => {
+      const exercise = exerciseMap.get(id);
+      if (!exercise) {
+        console.warn(`Exercise with ID "${id}" not found in session "${session.title}"`);
+      }
+      return exercise;
+    })
     .filter(Boolean);
 
   return (
