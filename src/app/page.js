@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { exercises as defaultExercises, session as defaultSession } from '../data/yoga-data';
 import { getSessions, reorderSessionExercises } from '../lib/sessionStorage';
 import { getExercises } from '../lib/exerciseStorage';
+import { getStories, isStoryId } from '../lib/storyStorage';
 import { exercises, session } from '../data/yoga-data';
 
 function formatTime(totalMinutes) {
@@ -14,16 +15,18 @@ function formatTime(totalMinutes) {
   return days > 0 ? `${timeStr} (+${days})` : timeStr;
 }
 
-function calculateExerciseTimes(startTime, sessionExercises) {
+function calculateExerciseTimes(startTime, sessionItems) {
   const [hours, mins] = startTime.split(':').map(Number);
   let currentMinutes = hours * 60 + mins;
   
-  return sessionExercises.map((exercise, idx) => {
+  return sessionItems.map((item, idx) => {
     const startMinutes = currentMinutes;
-    const endMinutes = currentMinutes + exercise.duration_minutes;
+    // Story elements have 0 duration, they are just narrative pauses
+    const duration = item.duration_minutes || 0;
+    const endMinutes = currentMinutes + duration;
     
     const result = {
-      ...exercise,
+      ...item,
       uniqueIndex: idx,
       startTime: formatTime(startMinutes),
       endTime: formatTime(endMinutes),
@@ -36,9 +39,11 @@ function calculateExerciseTimes(startTime, sessionExercises) {
 }
 
 function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDragEnd, isDragging }) {
+  const isStory = exercise.type === 'story';
+  
   return (
     <div 
-      className={`timeline-item ${isDragging ? 'dragging' : ''}`} 
+      className={`timeline-item ${isDragging ? 'dragging' : ''} ${isStory ? 'story-timeline-item' : ''}`} 
       style={{ animationDelay: `${index * 0.1}s` }}
       draggable
       onDragStart={(e) => onDragStart(e, index)}
@@ -46,28 +51,39 @@ function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDrag
       onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
     >
-      <div className="timeline-time">
-        {exercise.startTime} - {exercise.endTime}
-      </div>
-      <div className="exercise-card">
+      {!isStory && (
+        <div className="timeline-time">
+          {exercise.startTime} - {exercise.endTime}
+        </div>
+      )}
+      {isStory && (
+        <div className="timeline-time story-marker">
+          📖 Story
+        </div>
+      )}
+      <div className={`exercise-card ${isStory ? 'story-card' : ''}`}>
         <div className="card-header">
           <span className="drag-handle" title="Drag to reorder">☰</span>
-          <span className="exercise-icon">{exercise.icon}</span>
+          <span className="exercise-icon">{isStory ? '📖' : exercise.icon}</span>
           <div>
             <h3 className="exercise-title">{exercise.title}</h3>
-            <span className="exercise-category">{exercise.category}</span>
+            <span className="exercise-category">{isStory ? exercise.mood || 'Story Element' : exercise.category}</span>
           </div>
         </div>
-        <p className="exercise-description">{exercise.description}</p>
-        <div className="exercise-tags">
-          {exercise.tags.map((tag, tagIdx) => (
-            <span key={`${tag}-${tagIdx}`} className="exercise-tag">#{tag}</span>
-          ))}
-        </div>
-        <div className="exercise-duration">
-          <span>⏱️</span>
-          <span>{exercise.duration_minutes} Minuten</span>
-        </div>
+        <p className="exercise-description">{isStory ? exercise.text : exercise.description}</p>
+        {exercise.tags && exercise.tags.length > 0 && (
+          <div className="exercise-tags">
+            {exercise.tags.map((tag, tagIdx) => (
+              <span key={`${tag}-${tagIdx}`} className="exercise-tag">#{tag}</span>
+            ))}
+          </div>
+        )}
+        {!isStory && (
+          <div className="exercise-duration">
+            <span>⏱️</span>
+            <span>{exercise.duration_minutes} Minuten</span>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -77,6 +93,7 @@ export default function Home() {
   const [startTime, setStartTime] = useState('13:00');
   const [allSessions, setAllSessions] = useState([]);
   const [allExercises, setAllExercises] = useState([]);
+  const [allStories, setAllStories] = useState([]);
   const [selectedSessionId, setSelectedSessionId] = useState('default');
   const [currentExerciseOrder, setCurrentExerciseOrder] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -88,12 +105,14 @@ export default function Home() {
   const elapsedMsRef = useRef(0);
   const timelineContainerRef = useRef(null);
 
-  // Load sessions and exercises from localStorage
+  // Load sessions, exercises, and stories from localStorage
   useEffect(() => {
     const storedSessions = getSessions();
     const storedExercises = getExercises();
+    const storedStories = getStories();
     setAllSessions(storedSessions);
     setAllExercises(storedExercises);
+    setAllStories(storedStories);
     
     // Initialize with default session exercises
     setCurrentExerciseOrder(defaultSession.exercises);
@@ -115,40 +134,41 @@ export default function Home() {
     }
   }, [currentSession, isLoaded]);
 
-  // Build exercise lookup map from both default and stored exercises
-  const exerciseMap = useMemo(() => {
+  // Build item lookup map from default exercises, stored exercises, and stories
+  const itemMap = useMemo(() => {
     const map = new Map();
     defaultExercises.forEach(e => map.set(e.id, e));
     allExercises.forEach(e => map.set(e.id, e));
+    allStories.forEach(s => map.set(s.id, { ...s, type: 'story' }));
     return map;
-  }, [allExercises]);
+  }, [allExercises, allStories]);
 
-  // Get exercises for the current session
-  const sessionExercises = useMemo(() => {
+  // Get items (exercises and stories) for the current session
+  const sessionItems = useMemo(() => {
     return currentExerciseOrder
       .map(id => {
-        const exercise = exerciseMap.get(id);
-        if (!exercise) {
-          console.warn(`Exercise with ID "${id}" not found in exercise map`);
+        const item = itemMap.get(id);
+        if (!item) {
+          console.warn(`Item with ID "${id}" not found in item map`);
         }
-        return exercise;
+        return item;
       })
       .filter(Boolean);
-  }, [currentExerciseOrder, exerciseMap]);
+  }, [currentExerciseOrder, itemMap]);
   
-  const exercisesWithTimes = useMemo(() => {
-    return calculateExerciseTimes(startTime, sessionExercises);
-  }, [startTime, sessionExercises]);
+  const itemsWithTimes = useMemo(() => {
+    return calculateExerciseTimes(startTime, sessionItems);
+  }, [startTime, sessionItems]);
 
-  // Calculate total duration
+  // Calculate total duration (only exercises have duration, stories are 0)
   const totalDuration = useMemo(() => {
-    return sessionExercises.reduce((sum, ex) => sum + ex.duration_minutes, 0);
-  }, [sessionExercises]);
+    return sessionItems.reduce((sum, item) => sum + (item.duration_minutes || 0), 0);
+  }, [sessionItems]);
   
   const sessionEndTime = useMemo(() => {
-    if (exercisesWithTimes.length === 0) return startTime;
-    return exercisesWithTimes[exercisesWithTimes.length - 1].endTime;
-  }, [exercisesWithTimes, startTime]);
+    if (itemsWithTimes.length === 0) return startTime;
+    return itemsWithTimes[itemsWithTimes.length - 1].endTime;
+  }, [itemsWithTimes, startTime]);
 
   const totalDurationMs = totalDuration * 60 * 1000;
 
@@ -392,12 +412,12 @@ export default function Home() {
       
       <section className="timeline-container" ref={timelineContainerRef}>
         <h2 className="timeline-title">Deine Session Timeline</h2>
-        <p className="drag-hint">☰ Ziehen Sie die Übungen, um die Reihenfolge zu ändern</p>
+        <p className="drag-hint">☰ Ziehen Sie die Elemente, um die Reihenfolge zu ändern</p>
         <div className="timeline">
-          {exercisesWithTimes.map((exercise, index) => (
+          {itemsWithTimes.map((item, index) => (
             <ExerciseCard 
-              key={`${exercise.id}-${exercise.uniqueIndex}`} 
-              exercise={exercise} 
+              key={`${item.id}-${item.uniqueIndex}`} 
+              exercise={item} 
               index={index}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}

@@ -44,6 +44,11 @@ export default function Navbar() {
             </Link>
           </li>
           <li className="nav-item">
+            <Link href="/stories" className="nav-link" onClick={closeMenu}>
+              📖 Story
+            </Link>
+          </li>
+          <li className="nav-item">
             <Link href="/sessions" className="nav-link" onClick={closeMenu}>
               📋 Session
             </Link>
