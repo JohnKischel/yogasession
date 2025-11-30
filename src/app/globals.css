@@ -998,3 +998,90 @@ body {
   background: #c62828;
   color: white;
 }
+
+/* Session Controls */
+.session-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem auto;
+  max-width: 500px;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: var(--card-shadow);
+}
+
+.session-timer {
+  width: 100%;
+  text-align: center;
+}
+
+.timer-display {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  font-family: monospace;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--accent-color);
+  border-radius: 4px;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}
+
+.session-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-start {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  min-width: 140px;
+}
+
+.btn-start:hover {
+  background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(107, 77, 138, 0.3);
+}
+
+.btn-start.running {
+  background: linear-gradient(135deg, #e67e22, #f39c12);
+}
+
+.btn-start.running:hover {
+  background: linear-gradient(135deg, #f39c12, #e67e22);
+}
+
+.btn-reset {
+  background: var(--accent-color);
+  color: var(--primary-color);
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+}
+
+.btn-reset:hover:not(:disabled) {
+  background: var(--secondary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.btn-reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
