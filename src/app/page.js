@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { exercises as defaultExercises, session as defaultSession } from '../data/yoga-data';
 import { getSessions, reorderSessionExercises } from '../lib/sessionStorage';
 import { getExercises } from '../lib/exerciseStorage';
+import { exercises, session } from '../data/yoga-data';
 
 function formatTime(totalMinutes) {
   const days = Math.floor(totalMinutes / (24 * 60));
@@ -80,6 +81,12 @@ export default function Home() {
   const [currentExerciseOrder, setCurrentExerciseOrder] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const animationRef = useRef(null);
+  const startTimeRef = useRef(null);
+  const elapsedMsRef = useRef(0);
+  const timelineContainerRef = useRef(null);
   
   // Auto-scroll and timer state
   const [isRunning, setIsRunning] = useState(false);
@@ -152,6 +159,7 @@ export default function Home() {
   }, [exercisesWithTimes, startTime]);
 
   const totalDurationMs = totalDuration * 60 * 1000;
+  const totalDurationMs = session.total_duration_minutes * 60 * 1000;
 
   // Keep elapsedMsRef in sync with elapsedMs state
   useEffect(() => {
@@ -307,6 +315,7 @@ export default function Home() {
     );
   }
 
+  
   return (
     <main>
       <header className="header">
