@@ -3,8 +3,12 @@
 import { useState, useMemo } from 'react';
 import { exercises, session } from '../data/yoga-data';
 
-function formatTime(hours, minutes) {
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+function formatTime(totalMinutes) {
+  const days = Math.floor(totalMinutes / (24 * 60));
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60);
+  const mins = totalMinutes % 60;
+  const timeStr = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  return days > 0 ? `${timeStr} (+${days})` : timeStr;
 }
 
 function calculateExerciseTimes(startTime, sessionExercises) {
@@ -12,16 +16,14 @@ function calculateExerciseTimes(startTime, sessionExercises) {
   let currentMinutes = hours * 60 + mins;
   
   return sessionExercises.map((exercise) => {
-    const startHours = Math.floor(currentMinutes / 60) % 24;
-    const startMins = currentMinutes % 60;
+    const startMinutes = currentMinutes;
     const endMinutes = currentMinutes + exercise.duration_minutes;
-    const endHours = Math.floor(endMinutes / 60) % 24;
-    const endMins = endMinutes % 60;
     
     const result = {
       ...exercise,
-      startTime: formatTime(startHours, startMins),
-      endTime: formatTime(endHours, endMins),
+      startTime: formatTime(startMinutes),
+      endTime: formatTime(endMinutes),
+      endMinutes: endMinutes,
     };
     
     currentMinutes = endMinutes;
