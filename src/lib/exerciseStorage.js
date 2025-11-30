@@ -89,6 +89,8 @@ export function validateExercise(exercise) {
     errors.push('tags is required and must be an array');
   } else if (exercise.tags.some(tag => typeof tag !== 'string')) {
     errors.push('all tags must be strings');
+  } else if (exercise.tags.some(tag => tag.trim() === '')) {
+    errors.push('tags must not contain empty strings');
   }
   
   if (typeof exercise.duration_minutes !== 'number' || exercise.duration_minutes <= 0) {
@@ -120,7 +122,7 @@ export function createExercise(exerciseData) {
     title: exerciseData.title.trim(),
     description: exerciseData.description.trim(),
     category: exerciseData.category.trim(),
-    tags: exerciseData.tags.map(tag => tag.trim()),
+    tags: exerciseData.tags.filter(tag => typeof tag === 'string').map(tag => tag.trim()),
     duration_minutes: exerciseData.duration_minutes
   };
   
