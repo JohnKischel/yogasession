@@ -143,8 +143,8 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
       </div>
 
       <div className="form-group">
-        <label>Übungen auswählen *</label>
-        <div className="exercise-selector">
+        <label id="exercises-label">Übungen auswählen *</label>
+        <div className="exercise-selector" role="group" aria-labelledby="exercises-label">
           {exercises.length === 0 ? (
             <p className="no-exercises">Keine Übungen verfügbar. Erstellen Sie zuerst Übungen.</p>
           ) : (
@@ -154,6 +154,7 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
                   type="checkbox"
                   checked={formData.exercises.includes(exercise.id)}
                   onChange={() => handleExerciseToggle(exercise.id)}
+                  aria-label={`${exercise.title} (${exercise.duration_minutes} Minuten)`}
                 />
                 <span className="exercise-label">
                   {exercise.title} ({exercise.duration_minutes} Min.)
@@ -180,8 +181,9 @@ function SessionForm({ session, exercises, onSubmit, onCancel }) {
 }
 
 function SessionCard({ session, exercises, onEdit, onDelete }) {
+  const exerciseMap = new Map(exercises.map(e => [e.id, e]));
   const sessionExercises = session.exercises
-    .map(id => exercises.find(e => e.id === id))
+    .map(id => exerciseMap.get(id))
     .filter(Boolean);
 
   return (
