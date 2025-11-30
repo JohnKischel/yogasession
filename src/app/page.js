@@ -12,7 +12,9 @@ function calculateItemTimings(sessionItems) {
   
   return sessionItems.map((item, idx) => {
     const startMs = cumulativeMs;
-    const durationMs = (item.duration_minutes || 0) * 60 * 1000;
+    // Stories use 'time' field, exercises use 'duration_minutes'
+    const durationMinutes = item.type === 'story' ? (item.time || 0) : (item.duration_minutes || 0);
+    const durationMs = durationMinutes * 60 * 1000;
     const endMs = cumulativeMs + durationMs;
     
     const result = {
@@ -21,6 +23,7 @@ function calculateItemTimings(sessionItems) {
       startMs: startMs,
       endMs: endMs,
       durationMs: durationMs,
+      duration_minutes: durationMinutes, // Normalize duration for display
     };
     
     cumulativeMs = endMs;
@@ -40,6 +43,7 @@ const SCROLL_THROTTLE_MS = 500; // Throttle scroll updates
 
 function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDragEnd, isDragging, isActive, isPast }) {
   const isStory = exercise.type === 'story';
+  // Use duration_minutes which is normalized in calculateItemTimings for both exercises and stories
   const durationMinutes = exercise.duration_minutes || 0;
   
   return (
@@ -52,16 +56,9 @@ function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDrag
       onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
     >
-      {!isStory && (
-        <div className="timeline-time">
-          {durationMinutes} min
-        </div>
-      )}
-      {isStory && (
-        <div className="timeline-time story-marker">
-          📖 Story
-        </div>
-      )}
+      <div className={`timeline-time ${isStory ? 'story-marker' : ''}`}>
+        {isStory ? `📖 ${durationMinutes} min` : `${durationMinutes} min`}
+      </div>
       <div className={`exercise-card ${isStory ? 'story-card' : ''}`}>
         <div className="card-header">
           <span className="drag-handle" title="Drag to reorder">☰</span>
@@ -82,12 +79,10 @@ function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDrag
                 ))}
               </div>
             )}
-            {!isStory && (
-              <div className="exercise-duration">
-                <span>⏱️</span>
-                <span>{durationMinutes} Minuten</span>
-              </div>
-            )}
+            <div className="exercise-duration">
+              <span>⏱️</span>
+              <span>{durationMinutes} Minuten</span>
+            </div>
           </>
         ) : (
           <p className="exercise-description-collapsed">

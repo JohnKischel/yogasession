@@ -1106,6 +1106,25 @@ body {
   border-color: #e67e22 !important;
 }
 
+.storybook-add-btn {
+  background: #f0f8ff !important;
+  border-color: #3498db !important;
+}
+
+.storybook-add-btn:hover {
+  background: #e1f0ff !important;
+  border-color: #2980b9 !important;
+}
+
+.storybook-card {
+  border-left: 4px solid #3498db;
+}
+
+.badge-duration {
+  background: #e8f4fd;
+  color: #2980b9;
+}
+
 .selected-exercise-item.story-item {
   background: #fff8f0;
   border-color: #f39c12;
