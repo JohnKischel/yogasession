@@ -13,19 +13,37 @@ const CARD_TYPE_CONFIG = {
     icon: '💪',
     label: 'Exercise',
     color: '#6b4d8a',
-    categories: ['Stehübungen', 'Liegeübungen', 'Sitzübungen', 'Gleichgewicht', 'Entspannung']
+    categories: ['Stehübungen', 'Liegeübungen', 'Sitzübungen', 'Gleichgewicht', 'Entspannung'],
+    categoryLabel: 'Category',
+    contentLabel: 'Description',
+    contentPlaceholder: 'Describe the exercise...',
+    titlePlaceholder: 'e.g. Warrior I',
+    minDuration: 1,
+    durationStep: 1
   },
   [CARD_TYPES.STORY]: {
     icon: '📖',
     label: 'Story',
     color: '#e67e22',
-    categories: ['Ruhig', 'Energetisch', 'Meditativ', 'Motivierend', 'Entspannend']
+    categories: ['Ruhig', 'Energetisch', 'Meditativ', 'Motivierend', 'Entspannend'],
+    categoryLabel: 'Mood',
+    contentLabel: 'Text',
+    contentPlaceholder: 'The narrative text...',
+    titlePlaceholder: 'e.g. Grounding Transition',
+    minDuration: 0.5,
+    durationStep: 0.5
   },
   [CARD_TYPES.PRACTICAL]: {
     icon: '🔔',
     label: 'Practical',
     color: '#27ae60',
-    categories: []
+    categories: [],
+    categoryLabel: null,
+    contentLabel: 'Instruction',
+    contentPlaceholder: 'The action instruction...',
+    titlePlaceholder: 'e.g. Ring the Bell',
+    minDuration: 0.5,
+    durationStep: 0.5
   }
 };
 
@@ -200,30 +218,20 @@ export default function CardModal({ isOpen, onClose, onSubmit, editCard = null }
               name="title"
               value={formData.title}
               onChange={handleChange}
-              placeholder={
-                cardType === CARD_TYPES.EXERCISE ? 'e.g. Warrior I' :
-                cardType === CARD_TYPES.STORY ? 'e.g. Grounding Transition' :
-                'e.g. Ring the Bell'
-              }
+              placeholder={config.titlePlaceholder}
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="content">
-              {cardType === CARD_TYPES.EXERCISE ? 'Description' :
-               cardType === CARD_TYPES.STORY ? 'Text' :
-               'Instruction'} *
+              {config.contentLabel} *
             </label>
             <textarea
               id="content"
               name="content"
               value={formData.content}
               onChange={handleChange}
-              placeholder={
-                cardType === CARD_TYPES.EXERCISE ? 'Describe the exercise...' :
-                cardType === CARD_TYPES.STORY ? 'The narrative text...' :
-                'The action instruction...'
-              }
+              placeholder={config.contentPlaceholder}
               rows={4}
             />
           </div>
@@ -232,7 +240,7 @@ export default function CardModal({ isOpen, onClose, onSubmit, editCard = null }
             {categories.length > 0 && (
               <div className="form-group">
                 <label htmlFor="category">
-                  {cardType === CARD_TYPES.EXERCISE ? 'Category' : 'Mood'}
+                  {config.categoryLabel}
                 </label>
                 <select
                   id="category"
@@ -255,8 +263,8 @@ export default function CardModal({ isOpen, onClose, onSubmit, editCard = null }
                 name="duration"
                 value={formData.duration}
                 onChange={handleChange}
-                min={cardType === CARD_TYPES.EXERCISE ? 1 : 0.5}
-                step={cardType === CARD_TYPES.EXERCISE ? 1 : 0.5}
+                min={config.minDuration}
+                step={config.durationStep}
               />
             </div>
           </div>

@@ -3,20 +3,40 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import CardModal, { CARD_TYPES, CARD_TYPE_CONFIG } from '../components/CardModal';
-import { getExercises, createExercise, deleteExercise } from '../../lib/exerciseStorage';
+import { getExercises, createExercise, updateExercise, deleteExercise } from '../../lib/exerciseStorage';
 import { getStories, createStory, updateStory, deleteStory } from '../../lib/storyStorage';
 import { getPracticals, createPractical, updatePractical, deletePractical } from '../../lib/practicalStorage';
 
+// Field mappings for normalizing cards to common format
+const FIELD_MAPPINGS = {
+  [CARD_TYPES.EXERCISE]: {
+    textField: 'description',
+    timeField: 'duration_minutes',
+    categoryField: 'category'
+  },
+  [CARD_TYPES.STORY]: {
+    textField: 'text',
+    timeField: 'time',
+    categoryField: 'mood'
+  },
+  [CARD_TYPES.PRACTICAL]: {
+    textField: 'instruction',
+    timeField: 'time',
+    categoryField: null
+  }
+};
+
 // Normalize cards to a common format for display
 function normalizeCard(item, type) {
+  const mapping = FIELD_MAPPINGS[type];
   return {
     id: item.id,
     title: item.title,
-    text: type === CARD_TYPES.EXERCISE ? item.description : (item.text || item.instruction),
+    text: item[mapping.textField] || '',
     tags: item.tags || [],
-    time: type === CARD_TYPES.EXERCISE ? item.duration_minutes : item.time,
+    time: item[mapping.timeField] || 0,
     type: type,
-    category: item.category || item.mood || null,
+    category: mapping.categoryField ? item[mapping.categoryField] : null,
     originalItem: item
   };
 }
@@ -230,9 +250,7 @@ export default function CardsPage() {
     
     if (cardType === CARD_TYPES.EXERCISE) {
       if (editId) {
-        // Exercises don't have update in current storage, so we delete and recreate
-        deleteExercise(editId);
-        result = createExercise(data);
+        result = updateExercise(editId, data);
       } else {
         result = createExercise(data);
       }

@@ -136,6 +136,50 @@ export function createExercise(exerciseData) {
 }
 
 /**
+ * Update an existing exercise
+ * @param {string} id - Exercise ID to update
+ * @param {Object} exerciseData - Updated exercise data
+ * @returns {Object} Result object with success status and data or errors
+ */
+export function updateExercise(id, exerciseData) {
+  const validationErrors = validateExercise(exerciseData);
+  
+  if (validationErrors.length > 0) {
+    return {
+      success: false,
+      errors: validationErrors
+    };
+  }
+  
+  const exercises = getExercises();
+  const index = exercises.findIndex(e => e.id === id);
+  
+  if (index === -1) {
+    return {
+      success: false,
+      errors: ['Exercise not found']
+    };
+  }
+  
+  const updatedExercise = {
+    id: id,
+    title: exerciseData.title.trim(),
+    description: exerciseData.description.trim(),
+    category: exerciseData.category.trim(),
+    tags: exerciseData.tags.filter(tag => typeof tag === 'string').map(tag => tag.trim()),
+    duration_minutes: exerciseData.duration_minutes
+  };
+  
+  exercises[index] = updatedExercise;
+  saveExercises(exercises);
+  
+  return {
+    success: true,
+    exercise: updatedExercise
+  };
+}
+
+/**
  * Delete an exercise by ID
  * @param {string} id - Exercise ID to delete
  * @returns {boolean} True if deleted, false if not found
