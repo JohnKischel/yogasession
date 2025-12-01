@@ -18,9 +18,9 @@ const CARD_TYPES = {
 };
 
 const CARD_TYPE_LABELS = {
-  [CARD_TYPES.EXERCISE]: { icon: '💪', label: 'Exercise', color: '#6b4d8a' },
-  [CARD_TYPES.STORY]: { icon: '📖', label: 'Story', color: '#e67e22' },
-  [CARD_TYPES.PRACTICAL]: { icon: '🔔', label: 'Practical', color: '#27ae60' }
+  [CARD_TYPES.EXERCISE]: { icon: '💪', label: 'Exercise', color: '#2d7a6f' },
+  [CARD_TYPES.STORY]: { icon: '📖', label: 'Story', color: '#c17f59' },
+  [CARD_TYPES.PRACTICAL]: { icon: '🔔', label: 'Practical', color: '#5a9e7a' }
 };
 
 // Normalize cards to a common format
