@@ -710,11 +710,11 @@ h1, h2, h3 {
 .btn {
   padding: 0.75rem 1.5rem;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   font-family: 'Inter', sans-serif;
 }
 
@@ -745,24 +745,31 @@ h1, h2, h3 {
   background: var(--accent-color);
   color: var(--primary-color);
   flex: 1;
+  border: 2px solid transparent;
+  transition: all 0.25s ease;
 }
 
 .btn-edit:hover {
   background: var(--primary-color);
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 122, 111, 0.2);
 }
 
 .btn-delete {
   background: #fef2f2;
   color: #dc2626;
   flex: 1;
-  border: 1px solid #fecaca;
+  border: 2px solid #fecaca;
+  transition: all 0.25s ease;
 }
 
 .btn-delete:hover {
   background: #dc2626;
   color: white;
   border-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.2);
 }
 
 /* Form Styles */
@@ -1424,7 +1431,8 @@ h1, h2, h3 {
    Storybook Page Styles
    ================================= */
 
-.storybooks-page .storybook-controls {
+.storybooks-page .storybook-controls,
+.cards-page .storybook-controls {
   background: white;
   padding: 1.5rem;
   border-radius: 16px;
@@ -1432,27 +1440,35 @@ h1, h2, h3 {
   margin-bottom: 1.5rem;
 }
 
-.storybooks-page .search-box {
+.storybooks-page .search-box,
+.cards-page .search-box {
   position: relative;
   margin-bottom: 1rem;
 }
 
-.storybooks-page .search-input {
+.storybooks-page .search-input,
+.cards-page .search-input {
   width: 100%;
-  padding: 0.875rem 1rem;
+  padding: 0.875rem 1.25rem;
+  padding-left: 1rem;
   padding-right: 2.5rem;
   border: 2px solid var(--accent-color);
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  background: white;
+  box-shadow: 0 2px 8px rgba(45, 122, 111, 0.08);
 }
 
-.storybooks-page .search-input:focus {
+.storybooks-page .search-input:focus,
+.cards-page .search-input:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 4px 12px rgba(45, 122, 111, 0.15);
 }
 
-.storybooks-page .search-clear {
+.storybooks-page .search-clear,
+.cards-page .search-clear {
   position: absolute;
   right: 0.75rem;
   top: 50%;
@@ -1463,17 +1479,20 @@ h1, h2, h3 {
   cursor: pointer;
   font-size: 1rem;
   padding: 0.25rem;
+  transition: color 0.2s ease;
 }
 
-.storybooks-page .search-clear:hover {
+.storybooks-page .search-clear:hover,
+.cards-page .search-clear:hover {
   color: #c62828;
 }
 
-.storybooks-page .filter-row {
+.storybooks-page .filter-row,
+.cards-page .filter-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  align-items: flex-start;
+  gap: 0.75rem;
+  align-items: center;
   margin-bottom: 1rem;
 }
 
@@ -1487,25 +1506,31 @@ h1, h2, h3 {
 .type-filter-btn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.25rem;
+  min-width: 120px;
   border: 2px solid var(--accent-color);
-  border-radius: 20px;
+  border-radius: 12px;
   background: white;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(45, 122, 111, 0.08);
 }
 
 .type-filter-btn:hover {
   border-color: var(--type-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 122, 111, 0.15);
 }
 
 .type-filter-btn.active {
   background: var(--type-color);
   border-color: var(--type-color);
   color: white;
+  box-shadow: 0 4px 12px rgba(45, 122, 111, 0.2);
 }
 
 /* Tag Filter Dropdown */
@@ -1516,19 +1541,24 @@ h1, h2, h3 {
 .tag-filter-button {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.625rem 1.25rem;
+  min-width: 120px;
   border: 2px solid var(--accent-color);
-  border-radius: 8px;
+  border-radius: 12px;
   background: white;
   cursor: pointer;
   font-size: 0.9rem;
   font-weight: 500;
-  transition: border-color 0.2s ease;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(45, 122, 111, 0.08);
 }
 
 .tag-filter-button:hover {
   border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(45, 122, 111, 0.15);
 }
 
 .tag-filter-arrow {
@@ -1549,10 +1579,10 @@ h1, h2, h3 {
   overflow-y: auto;
   background: white;
   border: 2px solid var(--accent-color);
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   z-index: 100;
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
 }
 
 .tag-filter-clear {
@@ -1607,11 +1637,14 @@ h1, h2, h3 {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  margin-top: 1rem;
 }
 
 .storybook-actions .btn {
-  padding: 0.625rem 1.25rem;
+  padding: 0.625rem 1.5rem;
   font-size: 0.9rem;
+  min-width: 120px;
+  border-radius: 12px;
 }
 
 .btn-practical {
@@ -1957,17 +1990,32 @@ h1, h2, h3 {
 /* Cards Page Specific */
 .cards-page .btn-create-card {
   background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  font-size: 1rem;
-  padding: 0.875rem 1.5rem;
+  font-size: 0.9rem;
+  padding: 0.625rem 1.5rem;
+  min-width: 160px;
+  box-shadow: 0 4px 12px rgba(45, 122, 111, 0.2);
+}
+
+.cards-page .btn-create-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(45, 122, 111, 0.3);
 }
 
 @media (max-width: 768px) {
-  .storybooks-page .filter-row {
+  .storybooks-page .filter-row,
+  .cards-page .filter-row {
     flex-direction: column;
+    align-items: stretch;
   }
   
   .type-filter {
     width: 100%;
+    justify-content: center;
+  }
+  
+  .type-filter-btn {
+    flex: 1;
+    min-width: 0;
   }
   
   .tag-filter {
