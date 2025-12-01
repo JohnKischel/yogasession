@@ -9,6 +9,7 @@
  */
 
 const STORAGE_KEY = 'yogasession_practicals';
+const MIN_TIME_MINUTES = 0.5;
 
 /**
  * Get all practical elements from localStorage
@@ -96,8 +97,8 @@ export function validatePractical(practical) {
     errors.push('tags must not contain empty strings');
   }
   
-  if (typeof practical.time !== 'number' || practical.time < 0.5) {
-    errors.push('time is required and must be at least 0.5 minutes');
+  if (typeof practical.time !== 'number' || practical.time < MIN_TIME_MINUTES) {
+    errors.push(`time is required and must be at least ${MIN_TIME_MINUTES} minutes`);
   }
   
   return errors;
@@ -111,6 +112,15 @@ export function validatePractical(practical) {
 export function getPractical(id) {
   const practicals = getPracticals();
   return practicals.find(p => p.id === id) || null;
+}
+
+/**
+ * Sanitize and filter tags array
+ * @param {Array} tags - Array of tags to sanitize
+ * @returns {Array} Sanitized array of tags
+ */
+function sanitizeTags(tags) {
+  return tags.filter(tag => typeof tag === 'string').map(tag => tag.trim());
 }
 
 /**
@@ -134,7 +144,7 @@ export function createPractical(practicalData) {
     id: generateId(practicals),
     title: practicalData.title.trim(),
     instruction: practicalData.instruction.trim(),
-    tags: practicalData.tags.filter(tag => typeof tag === 'string').map(tag => tag.trim()),
+    tags: sanitizeTags(practicalData.tags),
     time: practicalData.time,
     type: 'practical'
   };
@@ -178,7 +188,7 @@ export function updatePractical(id, practicalData) {
     id: id,
     title: practicalData.title.trim(),
     instruction: practicalData.instruction.trim(),
-    tags: practicalData.tags.filter(tag => typeof tag === 'string').map(tag => tag.trim()),
+    tags: sanitizeTags(practicalData.tags),
     time: practicalData.time,
     type: 'practical'
   };

@@ -177,11 +177,12 @@ function UnifiedCard({ card, onEdit, onDelete }) {
 
 // Practical element form
 function PracticalForm({ practical, onSubmit, onCancel }) {
+  const originalItem = practical?.originalItem;
   const [formData, setFormData] = useState({
-    title: practical?.originalItem?.title || '',
-    instruction: practical?.originalItem?.instruction || '',
-    tags: practical?.originalItem?.tags?.join(', ') || '',
-    time: practical?.originalItem?.time || 1
+    title: originalItem?.title || '',
+    instruction: originalItem?.instruction || '',
+    tags: originalItem?.tags?.join(', ') || '',
+    time: originalItem?.time || 1
   });
   const [errors, setErrors] = useState([]);
 
@@ -300,15 +301,6 @@ function groupCardsByTag(cards, selectedTags) {
     groups[tag] = cards.filter(card => card.tags.includes(tag));
   });
   
-  // Add items that match selected tags but might have additional tags
-  const matchingCards = cards.filter(card => 
-    selectedTags.some(tag => card.tags.includes(tag))
-  );
-  
-  if (matchingCards.length > 0 && selectedTags.length > 0) {
-    return groups;
-  }
-  
   return groups;
 }
 
@@ -394,6 +386,9 @@ export default function StoryBooksPage() {
   };
 
   const handleUpdatePractical = (formData) => {
+    if (!editingPractical?.id) {
+      return { success: false, errors: ['No practical selected for editing'] };
+    }
     const result = updatePractical(editingPractical.id, formData);
     if (result.success) {
       loadData();
