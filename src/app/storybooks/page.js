@@ -1,26 +1,189 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { 
-  getStoryBooks, 
-  createStoryBook, 
-  updateStoryBook,
-  deleteStoryBook 
-} from '../../lib/storyBookStorage';
+import { getExercises } from '../../lib/exerciseStorage';
 import { getStories } from '../../lib/storyStorage';
+import { 
+  getPracticals, 
+  createPractical, 
+  updatePractical,
+  deletePractical 
+} from '../../lib/practicalStorage';
 
-const THEMES = ['Natur', 'Reise', 'Entspannung', 'Meditation', 'Energie', 'Balance'];
+const CARD_TYPES = {
+  EXERCISE: 'exercise',
+  STORY: 'story',
+  PRACTICAL: 'practical'
+};
 
-function StoryBookForm({ storyBook, stories, onSubmit, onCancel }) {
+const CARD_TYPE_LABELS = {
+  [CARD_TYPES.EXERCISE]: { icon: '💪', label: 'Exercise', color: '#6b4d8a' },
+  [CARD_TYPES.STORY]: { icon: '📖', label: 'Story', color: '#e67e22' },
+  [CARD_TYPES.PRACTICAL]: { icon: '🔔', label: 'Practical', color: '#27ae60' }
+};
+
+// Normalize cards to a common format
+function normalizeCard(item, type) {
+  return {
+    id: item.id,
+    title: item.title,
+    text: type === CARD_TYPES.EXERCISE ? item.description : (item.text || item.instruction),
+    tags: item.tags || [],
+    time: type === CARD_TYPES.EXERCISE ? item.duration_minutes : item.time,
+    type: type,
+    category: item.category || item.mood || null,
+    originalItem: item
+  };
+}
+
+// Multi-select filter dropdown component
+function TagFilter({ allTags, selectedTags, onTagsChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleTagToggle = (tag) => {
+    if (selectedTags.includes(tag)) {
+      onTagsChange(selectedTags.filter(t => t !== tag));
+    } else {
+      onTagsChange([...selectedTags, tag]);
+    }
+  };
+
+  const handleClearAll = () => {
+    onTagsChange([]);
+  };
+
+  return (
+    <div className="tag-filter">
+      <button
+        type="button"
+        className="tag-filter-button"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+      >
+        <span>🏷️ Tags filtern {selectedTags.length > 0 && `(${selectedTags.length})`}</span>
+        <span className={`tag-filter-arrow ${isOpen ? 'open' : ''}`}>▼</span>
+      </button>
+      
+      {isOpen && (
+        <div className="tag-filter-dropdown" role="listbox" aria-multiselectable="true">
+          {selectedTags.length > 0 && (
+            <button
+              type="button"
+              className="tag-filter-clear"
+              onClick={handleClearAll}
+            >
+              ✕ Alle Filter entfernen
+            </button>
+          )}
+          {allTags.length === 0 ? (
+            <p className="tag-filter-empty">Keine Tags verfügbar</p>
+          ) : (
+            allTags.map(tag => (
+              <label
+                key={tag}
+                className={`tag-filter-option ${selectedTags.includes(tag) ? 'selected' : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedTags.includes(tag)}
+                  onChange={() => handleTagToggle(tag)}
+                />
+                <span>#{tag}</span>
+              </label>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Card type filter component
+function TypeFilter({ selectedTypes, onTypesChange }) {
+  const handleTypeToggle = (type) => {
+    if (selectedTypes.includes(type)) {
+      onTypesChange(selectedTypes.filter(t => t !== type));
+    } else {
+      onTypesChange([...selectedTypes, type]);
+    }
+  };
+
+  return (
+    <div className="type-filter">
+      {Object.entries(CARD_TYPE_LABELS).map(([type, { icon, label, color }]) => (
+        <button
+          key={type}
+          type="button"
+          className={`type-filter-btn ${selectedTypes.includes(type) ? 'active' : ''}`}
+          onClick={() => handleTypeToggle(type)}
+          style={{ '--type-color': color }}
+          aria-pressed={selectedTypes.includes(type)}
+        >
+          {icon} {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Unified card component
+function UnifiedCard({ card, onEdit, onDelete }) {
+  const { icon, label, color } = CARD_TYPE_LABELS[card.type];
+  
+  return (
+    <div 
+      className={`unified-card unified-card-${card.type}`}
+      style={{ '--card-accent': color }}
+    >
+      <div className="unified-card-header">
+        <div className="unified-card-type-badge" style={{ background: color }}>
+          {icon} {label}
+        </div>
+        <h3>{card.title}</h3>
+      </div>
+      
+      <p className="unified-card-text">{card.text}</p>
+      
+      <div className="unified-card-meta">
+        {card.category && (
+          <span className="unified-card-category">{card.category}</span>
+        )}
+        <span className="unified-card-time">⏱️ {card.time} Min.</span>
+      </div>
+      
+      {card.tags && card.tags.length > 0 && (
+        <div className="unified-card-tags">
+          {card.tags.map(tag => (
+            <span key={tag} className="unified-card-tag">#{tag}</span>
+          ))}
+        </div>
+      )}
+      
+      {card.type === CARD_TYPES.PRACTICAL && (
+        <div className="unified-card-actions">
+          <button className="btn btn-edit" onClick={() => onEdit(card)}>
+            ✏️ Bearbeiten
+          </button>
+          <button className="btn btn-delete" onClick={() => onDelete(card.id)}>
+            🗑️ Löschen
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Practical element form
+function PracticalForm({ practical, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
-    title: storyBook?.title || '',
-    description: storyBook?.description || '',
-    theme: storyBook?.theme || THEMES[0],
-    storyIds: storyBook?.storyIds || []
+    title: practical?.originalItem?.title || '',
+    instruction: practical?.originalItem?.instruction || '',
+    tags: practical?.originalItem?.tags?.join(', ') || '',
+    time: practical?.originalItem?.time || 1
   });
   const [errors, setErrors] = useState([]);
-  const [draggedIndex, setDraggedIndex] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,70 +193,29 @@ function StoryBookForm({ storyBook, stories, onSubmit, onCancel }) {
     }));
   };
 
-  const handleAddStory = (storyId) => {
-    setFormData(prev => ({
-      ...prev,
-      storyIds: [...prev.storyIds, storyId]
-    }));
-  };
-
-  const handleRemoveStory = (indexToRemove) => {
-    setFormData(prev => ({
-      ...prev,
-      storyIds: prev.storyIds.filter((_, idx) => idx !== indexToRemove)
-    }));
-  };
-
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e, dropIndex) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === dropIndex) return;
-
-    setFormData(prev => {
-      const newStoryIds = [...prev.storyIds];
-      const [draggedItem] = newStoryIds.splice(draggedIndex, 1);
-      newStoryIds.splice(dropIndex, 0, draggedItem);
-      return { ...prev, storyIds: newStoryIds };
-    });
-    
-    setDraggedIndex(null);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     setErrors([]);
     
-    const result = onSubmit(formData);
+    const tagsArray = (formData.tags || '')
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+    
+    const result = onSubmit({
+      ...formData,
+      tags: tagsArray,
+      time: parseFloat(formData.time)
+    });
+    
     if (!result.success) {
       setErrors(result.errors);
     }
   };
 
-  // Create story lookup map
-  const storyMap = new Map(stories.map(s => [s.id, s]));
-
-  // Calculate total time for selected stories
-  const totalTime = formData.storyIds.reduce((sum, storyId) => {
-    const story = storyMap.get(storyId);
-    return sum + (story?.time || 0);
-  }, 0);
-
   return (
-    <form onSubmit={handleSubmit} className="session-form">
-      <h2>{storyBook ? 'Story Book bearbeiten' : 'Neues Story Book erstellen'}</h2>
+    <form onSubmit={handleSubmit} className="session-form practical-form">
+      <h2>{practical ? 'Praktische Anweisung bearbeiten' : 'Neue praktische Anweisung erstellen'}</h2>
       
       {errors.length > 0 && (
         <div className="form-errors">
@@ -111,118 +233,47 @@ function StoryBookForm({ storyBook, stories, onSubmit, onCancel }) {
           name="title"
           value={formData.title}
           onChange={handleChange}
-          placeholder="z.B. Waldspaziergang"
+          placeholder="z.B. Glocke läuten"
         />
       </div>
 
       <div className="form-group">
-        <label htmlFor="description">Beschreibung *</label>
+        <label htmlFor="instruction">Anweisung *</label>
         <textarea
-          id="description"
-          name="description"
-          value={formData.description}
+          id="instruction"
+          name="instruction"
+          value={formData.instruction}
           onChange={handleChange}
-          placeholder="Eine Beschreibung der Geschichte, die dieses Story Book erzählt..."
-          rows={3}
+          placeholder="Die Handlungsanweisung, z.B. 'Läuten Sie die Glocke dreimal, um die Meditation zu beginnen...'"
+          rows={4}
         />
       </div>
 
+      <div className="form-row">
+        <div className="form-group">
+          <label htmlFor="time">Zeit (Minuten) *</label>
+          <input
+            type="number"
+            id="time"
+            name="time"
+            value={formData.time}
+            onChange={handleChange}
+            min="0.5"
+            step="0.5"
+          />
+        </div>
+      </div>
+
       <div className="form-group">
-        <label htmlFor="theme">Thema</label>
-        <select
-          id="theme"
-          name="theme"
-          value={formData.theme}
+        <label htmlFor="tags">Tags (kommagetrennt)</label>
+        <input
+          type="text"
+          id="tags"
+          name="tags"
+          value={formData.tags}
           onChange={handleChange}
-        >
-          {THEMES.map(theme => (
-            <option key={theme} value={theme}>{theme}</option>
-          ))}
-        </select>
-      </div>
-
-      <div className="form-group">
-        <label id="stories-label">Story Elemente hinzufügen</label>
-        <p className="exercise-hint">Klicken Sie auf ein Story Element, um es zum Story Book hinzuzufügen</p>
-        <div className="exercise-selector" role="group" aria-labelledby="stories-label">
-          {stories.length === 0 ? (
-            <p className="no-exercises">Keine Story Elemente verfügbar. <Link href="/stories">Erstellen Sie Story Elemente</Link>.</p>
-          ) : (
-            stories.map(story => (
-              <button
-                type="button"
-                key={story.id}
-                className="exercise-add-btn story-add-btn"
-                onClick={() => handleAddStory(story.id)}
-                aria-label={`${story.title} hinzufügen (${story.time} Minuten)`}
-              >
-                <span className="exercise-add-icon">➕</span>
-                <span className="exercise-label">
-                  📖 {story.title} ({story.time} Min.)
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label>Ausgewählte Story Elemente ({formData.storyIds.length}) - Gesamt: {totalTime} Min.</label>
-        <p className="exercise-hint">Ziehen Sie die Elemente, um die Reihenfolge zu ändern</p>
-        <div className="selected-exercises-list">
-          {formData.storyIds.length === 0 ? (
-            <p className="no-exercises">Noch keine Story Elemente ausgewählt</p>
-          ) : (
-            formData.storyIds.map((storyId, idx) => {
-              const story = storyMap.get(storyId);
-              if (!story) {
-                return (
-                  <div
-                    key={`missing-${storyId}-${idx}`}
-                    className="selected-exercise-item missing"
-                  >
-                    <span className="exercise-number">{idx + 1}.</span>
-                    <span className="exercise-name" style={{ color: '#c62828' }}>
-                      Story nicht gefunden (ID: {storyId})
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-remove-exercise"
-                      onClick={() => handleRemoveStory(idx)}
-                      aria-label="Fehlende Story entfernen"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                );
-              }
-              return (
-                <div
-                  key={`${storyId}-${idx}`}
-                  className={`selected-exercise-item story-item ${draggedIndex === idx ? 'dragging' : ''}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, idx)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, idx)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <span className="drag-handle">☰</span>
-                  <span className="exercise-number">{idx + 1}.</span>
-                  <span className="exercise-name">📖 {story.title}</span>
-                  <span className="exercise-duration">({story.time} Min.)</span>
-                  <button
-                    type="button"
-                    className="btn-remove-exercise"
-                    onClick={() => handleRemoveStory(idx)}
-                    aria-label={`${story.title} entfernen`}
-                  >
-                    ✕
-                  </button>
-                </div>
-              );
-            })
-          )}
-        </div>
+          placeholder="z.B. beginn, ritual, glocke"
+        />
       </div>
 
       <div className="form-actions">
@@ -230,74 +281,111 @@ function StoryBookForm({ storyBook, stories, onSubmit, onCancel }) {
           Abbrechen
         </button>
         <button type="submit" className="btn btn-primary">
-          {storyBook ? 'Speichern' : 'Erstellen'}
+          {practical ? 'Speichern' : 'Erstellen'}
         </button>
       </div>
     </form>
   );
 }
 
-function StoryBookCard({ storyBook, stories, onEdit, onDelete }) {
-  const storyMap = new Map(stories.map(s => [s.id, s]));
+// Group cards by tag
+function groupCardsByTag(cards, selectedTags) {
+  if (selectedTags.length === 0) {
+    return { 'Alle Elemente': cards };
+  }
   
-  const bookStories = storyBook.storyIds
-    .map(id => storyMap.get(id))
-    .filter(Boolean);
+  const groups = {};
   
-  const totalTime = bookStories.reduce((sum, story) => sum + (story.time || 0), 0);
-
-  return (
-    <div className="session-card storybook-card">
-      <div className="session-card-header">
-        <h3>📚 {storyBook.title}</h3>
-        <div className="session-badges">
-          {storyBook.theme && <span className="badge badge-category">{storyBook.theme}</span>}
-          <span className="badge badge-duration">⏱️ {totalTime} Min.</span>
-          <span className="badge badge-level">{bookStories.length} Stories</span>
-        </div>
-      </div>
-      <p className="session-description">{storyBook.description}</p>
-      {bookStories.length > 0 && (
-        <div className="session-exercises">
-          <strong>Story Elemente:</strong>
-          <ol>
-            {bookStories.map((story, idx) => (
-              <li key={`${story.id}-${idx}`}>
-                📖 {story.title} ({story.time} Min.)
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-      <div className="session-card-actions">
-        <button className="btn btn-edit" onClick={() => onEdit(storyBook)}>
-          ✏️ Bearbeiten
-        </button>
-        <button className="btn btn-delete" onClick={() => onDelete(storyBook.id)}>
-          🗑️ Löschen
-        </button>
-      </div>
-    </div>
+  selectedTags.forEach(tag => {
+    groups[tag] = cards.filter(card => card.tags.includes(tag));
+  });
+  
+  // Add items that match selected tags but might have additional tags
+  const matchingCards = cards.filter(card => 
+    selectedTags.some(tag => card.tags.includes(tag))
   );
+  
+  if (matchingCards.length > 0 && selectedTags.length > 0) {
+    return groups;
+  }
+  
+  return groups;
 }
 
 export default function StoryBooksPage() {
-  const [storyBooks, setStoryBooks] = useState([]);
+  const [exercises, setExercises] = useState([]);
   const [stories, setStories] = useState([]);
+  const [practicals, setPracticals] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedTypes, setSelectedTypes] = useState([CARD_TYPES.EXERCISE, CARD_TYPES.STORY, CARD_TYPES.PRACTICAL]);
   const [showForm, setShowForm] = useState(false);
-  const [editingStoryBook, setEditingStoryBook] = useState(null);
+  const [editingPractical, setEditingPractical] = useState(null);
 
   const loadData = useCallback(() => {
-    setStoryBooks(getStoryBooks());
+    setExercises(getExercises());
     setStories(getStories());
+    setPracticals(getPracticals());
   }, []);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const handleCreate = (formData) => {
-    const result = createStoryBook(formData);
+  // Normalize all cards to a common format
+  const allCards = useMemo(() => {
+    const normalizedExercises = exercises.map(e => normalizeCard(e, CARD_TYPES.EXERCISE));
+    const normalizedStories = stories.map(s => normalizeCard(s, CARD_TYPES.STORY));
+    const normalizedPracticals = practicals.map(p => normalizeCard(p, CARD_TYPES.PRACTICAL));
+    return [...normalizedExercises, ...normalizedStories, ...normalizedPracticals];
+  }, [exercises, stories, practicals]);
+
+  // Get all unique tags
+  const allTags = useMemo(() => {
+    const tags = new Set();
+    allCards.forEach(card => {
+      card.tags.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags).sort();
+  }, [allCards]);
+
+  // Filter cards based on search query, selected tags, and selected types
+  const filteredCards = useMemo(() => {
+    return allCards.filter(card => {
+      // Filter by type
+      if (!selectedTypes.includes(card.type)) {
+        return false;
+      }
+      
+      // Filter by search query
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = card.title.toLowerCase().includes(query);
+        const matchesText = card.text?.toLowerCase().includes(query);
+        if (!matchesTitle && !matchesText) {
+          return false;
+        }
+      }
+      
+      // Filter by tags
+      if (selectedTags.length > 0) {
+        const hasSelectedTag = selectedTags.some(tag => card.tags.includes(tag));
+        if (!hasSelectedTag) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [allCards, searchQuery, selectedTags, selectedTypes]);
+
+  // Group filtered cards by tag
+  const groupedCards = useMemo(() => {
+    return groupCardsByTag(filteredCards, selectedTags);
+  }, [filteredCards, selectedTags]);
+
+  const handleCreatePractical = (formData) => {
+    const result = createPractical(formData);
     if (result.success) {
       loadData();
       setShowForm(false);
@@ -305,82 +393,154 @@ export default function StoryBooksPage() {
     return result;
   };
 
-  const handleUpdate = (formData) => {
-    const result = updateStoryBook(editingStoryBook.id, formData);
+  const handleUpdatePractical = (formData) => {
+    const result = updatePractical(editingPractical.id, formData);
     if (result.success) {
       loadData();
-      setEditingStoryBook(null);
+      setEditingPractical(null);
       setShowForm(false);
     }
     return result;
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm('Möchten Sie dieses Story Book wirklich löschen?')) {
-      deleteStoryBook(id);
+  const handleDeletePractical = (id) => {
+    if (window.confirm('Möchten Sie diese praktische Anweisung wirklich löschen?')) {
+      deletePractical(id);
       loadData();
     }
   };
 
-  const handleEdit = (storyBook) => {
-    setEditingStoryBook(storyBook);
+  const handleEditPractical = (card) => {
+    setEditingPractical(card);
     setShowForm(true);
   };
 
   const handleCancel = () => {
     setShowForm(false);
-    setEditingStoryBook(null);
+    setEditingPractical(null);
   };
 
   return (
-    <main className="sessions-page">
+    <main className="sessions-page storybooks-page">
       <header className="header">
         <div className="header-content">
-          <h1>📚 Story Books</h1>
-          <p>Sammeln Sie Story Elemente zu thematischen Geschichten</p>
+          <h1>📚 Storybook - Alle Elemente</h1>
+          <p>Durchsuchen und filtern Sie alle verfügbaren Karten für Ihre Yoga-Sessions</p>
         </div>
       </header>
 
       <div className="sessions-container">
         {showForm ? (
-          <StoryBookForm
-            storyBook={editingStoryBook}
-            stories={stories}
-            onSubmit={editingStoryBook ? handleUpdate : handleCreate}
+          <PracticalForm
+            practical={editingPractical}
+            onSubmit={editingPractical ? handleUpdatePractical : handleCreatePractical}
             onCancel={handleCancel}
           />
         ) : (
           <>
-            <div className="sessions-header">
-              <h2>Ihre Story Books ({storyBooks.length})</h2>
-              <button 
-                className="btn btn-primary"
-                onClick={() => setShowForm(true)}
-              >
-                ➕ Neues Story Book
-              </button>
+            {/* Search and filter controls */}
+            <div className="storybook-controls">
+              <div className="search-box">
+                <input
+                  type="text"
+                  placeholder="🔍 Suche nach Titel oder Text..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="search-input"
+                  aria-label="Suche"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Suche löschen"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              
+              <div className="filter-row">
+                <TypeFilter
+                  selectedTypes={selectedTypes}
+                  onTypesChange={setSelectedTypes}
+                />
+                <TagFilter
+                  allTags={allTags}
+                  selectedTags={selectedTags}
+                  onTagsChange={setSelectedTags}
+                />
+              </div>
+              
+              <div className="storybook-actions">
+                <button 
+                  className="btn btn-primary btn-practical"
+                  onClick={() => setShowForm(true)}
+                >
+                  🔔 Neue praktische Anweisung
+                </button>
+                <Link href="/exercises" className="btn btn-secondary">
+                  💪 Übungen verwalten
+                </Link>
+                <Link href="/stories" className="btn btn-secondary">
+                  📖 Stories verwalten
+                </Link>
+              </div>
             </div>
 
-            {storyBooks.length === 0 ? (
-              <div className="empty-state">
-                <p>Noch keine Story Books vorhanden.</p>
-                <p>Erstellen Sie Ihr erstes Story Book!</p>
-                <p className="form-hint" style={{ marginTop: '1rem' }}>
-                  Story Books sind Sammlungen von Story Elementen, die zusammen 
-                  eine kohärente Geschichte erzählen und in Sessions verwendet werden können.
-                </p>
+            {/* Results summary */}
+            <div className="storybook-summary">
+              <span>{filteredCards.length} von {allCards.length} Elementen</span>
+              {selectedTags.length > 0 && (
+                <div className="active-filters">
+                  {selectedTags.map(tag => (
+                    <span key={tag} className="active-filter-tag">
+                      #{tag}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTags(selectedTags.filter(t => t !== tag))}
+                        aria-label={`Filter ${tag} entfernen`}
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Card groups */}
+            {Object.entries(groupedCards).map(([groupName, cards]) => (
+              <div key={groupName} className="card-group">
+                {selectedTags.length > 0 && (
+                  <h3 className="card-group-title">#{groupName} ({cards.length})</h3>
+                )}
+                
+                {cards.length === 0 ? (
+                  <div className="empty-state">
+                    <p>Keine Elemente gefunden.</p>
+                    {searchQuery && <p>Versuchen Sie eine andere Suche.</p>}
+                  </div>
+                ) : (
+                  <div className="unified-cards-grid">
+                    {cards.map(card => (
+                      <UnifiedCard
+                        key={`${card.type}-${card.id}`}
+                        card={card}
+                        onEdit={card.type === CARD_TYPES.PRACTICAL ? handleEditPractical : undefined}
+                        onDelete={card.type === CARD_TYPES.PRACTICAL ? handleDeletePractical : undefined}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="sessions-grid">
-                {storyBooks.map(storyBook => (
-                  <StoryBookCard
-                    key={storyBook.id}
-                    storyBook={storyBook}
-                    stories={stories}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                ))}
+            ))}
+
+            {allCards.length === 0 && (
+              <div className="empty-state">
+                <p>Noch keine Elemente vorhanden.</p>
+                <p>Erstellen Sie Übungen, Stories oder praktische Anweisungen!</p>
               </div>
             )}
           </>
