@@ -5,15 +5,43 @@ import { exercises as defaultExercises, session as defaultSession } from '../dat
 import { getSessions, reorderSessionExercises } from '../lib/sessionStorage';
 import { getExercises } from '../lib/exerciseStorage';
 import { getStories, isStoryId } from '../lib/storyStorage';
+import { getPracticals, isPracticalId } from '../lib/practicalStorage';
 import { exercises, session } from '../data/yoga-data';
+
+// Card type constants
+const CARD_TYPES = {
+  EXERCISE: 'exercise',
+  STORY: 'story',
+  PRACTICAL: 'practical'
+};
+
+// Helper function to determine card type from ID
+function getCardType(id) {
+  if (isStoryId(id)) return CARD_TYPES.STORY;
+  if (isPracticalId(id)) return CARD_TYPES.PRACTICAL;
+  return CARD_TYPES.EXERCISE;
+}
+
+// Card type configuration with time field mappings
+const CARD_TYPE_CONFIG = {
+  [CARD_TYPES.EXERCISE]: { timeField: 'duration_minutes' },
+  [CARD_TYPES.STORY]: { timeField: 'time' },
+  [CARD_TYPES.PRACTICAL]: { timeField: 'time' }
+};
+
+// Helper to get duration from item based on its type
+function getItemDuration(item) {
+  const type = item.type || CARD_TYPES.EXERCISE;
+  const config = CARD_TYPE_CONFIG[type];
+  return item[config.timeField] || 0;
+}
 
 function calculateItemTimings(sessionItems) {
   let cumulativeMs = 0;
   
   return sessionItems.map((item, idx) => {
     const startMs = cumulativeMs;
-    // Stories use 'time' field, exercises use 'duration_minutes'
-    const durationMinutes = item.type === 'story' ? (item.time || 0) : (item.duration_minutes || 0);
+    const durationMinutes = getItemDuration(item);
     const durationMs = durationMinutes * 60 * 1000;
     const endMs = cumulativeMs + durationMs;
     
@@ -43,12 +71,38 @@ const SCROLL_THROTTLE_MS = 500; // Throttle scroll updates
 
 function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDragEnd, isDragging, isActive, isPast }) {
   const isStory = exercise.type === 'story';
-  // Use duration_minutes which is normalized in calculateItemTimings for both exercises and stories
+  const isPractical = exercise.type === 'practical';
+  // Use duration_minutes which is normalized in calculateItemTimings for all types
   const durationMinutes = exercise.duration_minutes || 0;
+  
+  // Determine icon and label based on type
+  const getIcon = () => {
+    if (isStory) return '📖';
+    if (isPractical) return '🔔';
+    return exercise.icon || '🧘';
+  };
+  
+  const getTimeLabel = () => {
+    if (isStory) return `📖 ${durationMinutes} min`;
+    if (isPractical) return `🔔 ${durationMinutes} min`;
+    return `${durationMinutes} min`;
+  };
+  
+  const getDescription = () => {
+    if (isStory) return exercise.text;
+    if (isPractical) return exercise.instruction;
+    return exercise.description;
+  };
+  
+  const getCategory = () => {
+    if (isStory) return exercise.mood || 'Story Element';
+    if (isPractical) return 'Practical Action';
+    return exercise.category;
+  };
   
   return (
     <div 
-      className={`timeline-item ${isDragging ? 'dragging' : ''} ${isStory ? 'story-timeline-item' : ''} ${isActive ? 'active' : ''} ${isPast ? 'past' : ''}`} 
+      className={`timeline-item ${isDragging ? 'dragging' : ''} ${isStory ? 'story-timeline-item' : ''} ${isPractical ? 'practical-timeline-item' : ''} ${isActive ? 'active' : ''} ${isPast ? 'past' : ''}`} 
       style={{ animationDelay: `${index * 0.1}s` }}
       draggable
       onDragStart={(e) => onDragStart(e, index)}
@@ -56,22 +110,22 @@ function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDrag
       onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
     >
-      <div className={`timeline-time ${isStory ? 'story-marker' : ''}`}>
-        {isStory ? `📖 ${durationMinutes} min` : `${durationMinutes} min`}
+      <div className={`timeline-time ${isStory ? 'story-marker' : ''} ${isPractical ? 'practical-marker' : ''}`}>
+        {getTimeLabel()}
       </div>
-      <div className={`exercise-card ${isStory ? 'story-card' : ''}`}>
+      <div className={`exercise-card ${isStory ? 'story-card' : ''} ${isPractical ? 'practical-card' : ''}`}>
         <div className="card-header">
           <span className="drag-handle" title="Drag to reorder">☰</span>
-          <span className="exercise-icon">{isStory ? '📖' : exercise.icon}</span>
+          <span className="exercise-icon">{getIcon()}</span>
           <div>
             <h3 className="exercise-title">{exercise.title}</h3>
-            <span className="exercise-category">{isStory ? exercise.mood || 'Story Element' : exercise.category}</span>
+            <span className="exercise-category">{getCategory()}</span>
           </div>
         </div>
         {/* Show full description only when active, collapsed view otherwise */}
         {isActive ? (
           <>
-            <p className="exercise-description">{isStory ? exercise.text : exercise.description}</p>
+            <p className="exercise-description">{getDescription()}</p>
             <div className="exercise-duration">
               <span>⏱️</span>
               <span>{durationMinutes} Minuten</span>
@@ -79,7 +133,7 @@ function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDrag
           </>
         ) : (
           <p className="exercise-description-collapsed">
-            {truncateText(isStory ? exercise.text : exercise.description)}
+            {truncateText(getDescription())}
           </p>
         )}
       </div>
@@ -91,6 +145,7 @@ export default function Home() {
   const [allSessions, setAllSessions] = useState([]);
   const [allExercises, setAllExercises] = useState([]);
   const [allStories, setAllStories] = useState([]);
+  const [allPracticals, setAllPracticals] = useState([]);
   const [selectedSessionId, setSelectedSessionId] = useState('default');
   const [currentExerciseOrder, setCurrentExerciseOrder] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -104,14 +159,16 @@ export default function Home() {
   const timelineContainerRef = useRef(null);
   const itemRefs = useRef([]);
 
-  // Load sessions, exercises, and stories from localStorage
+  // Load sessions, exercises, stories, and practicals from localStorage
   useEffect(() => {
     const storedSessions = getSessions();
     const storedExercises = getExercises();
     const storedStories = getStories();
+    const storedPracticals = getPracticals();
     setAllSessions(storedSessions);
     setAllExercises(storedExercises);
     setAllStories(storedStories);
+    setAllPracticals(storedPracticals);
     
     // Initialize with default session exercises
     setCurrentExerciseOrder(defaultSession.exercises);
@@ -133,16 +190,17 @@ export default function Home() {
     }
   }, [currentSession, isLoaded]);
 
-  // Build item lookup map from default exercises, stored exercises, and stories
+  // Build item lookup map from default exercises, stored exercises, stories, and practicals
   const itemMap = useMemo(() => {
     const map = new Map();
     defaultExercises.forEach(e => map.set(e.id, e));
     allExercises.forEach(e => map.set(e.id, e));
     allStories.forEach(s => map.set(s.id, { ...s, type: 'story' }));
+    allPracticals.forEach(p => map.set(p.id, { ...p, type: 'practical' }));
     return map;
-  }, [allExercises, allStories]);
+  }, [allExercises, allStories, allPracticals]);
 
-  // Get items (exercises and stories) for the current session
+  // Get items (exercises, stories, and practicals) for the current session
   const sessionItems = useMemo(() => {
     return currentExerciseOrder
       .map(id => {
