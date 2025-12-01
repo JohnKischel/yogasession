@@ -28,21 +28,21 @@ const CARD_TYPE_CONFIG = {
   [CARD_TYPES.EXERCISE]: {
     icon: '💪',
     label: 'Exercise',
-    color: '#6b4d8a',
+    color: '#2d7a6f',
     timeField: 'duration_minutes',
     categoryField: 'category'
   },
   [CARD_TYPES.STORY]: {
     icon: '📖',
     label: 'Story',
-    color: '#e67e22',
+    color: '#c17f59',
     timeField: 'time',
     categoryField: 'mood'
   },
   [CARD_TYPES.PRACTICAL]: {
     icon: '🔔',
     label: 'Practical',
-    color: '#27ae60',
+    color: '#5a9e7a',
     timeField: 'time',
     categoryField: null
   }

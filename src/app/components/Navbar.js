@@ -18,7 +18,7 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="navbar-container">
         <Link href="/" className="navbar-logo" onClick={closeMenu}>
-          🧘 Yoga Session
+          <span className="logo-icon">☯</span> Yoga Session
         </Link>
         
         <button 
@@ -35,17 +35,17 @@ export default function Navbar() {
         <ul className={`nav-menu ${isOpen ? 'active' : ''}`}>
           <li className="nav-item">
             <Link href="/" className="nav-link" onClick={closeMenu}>
-              🏠 Home
+              <span className="nav-icon">⌂</span> Home
             </Link>
           </li>
           <li className="nav-item">
             <Link href="/cards" className="nav-link" onClick={closeMenu}>
-              🎴 Cards
+              <span className="nav-icon">◈</span> Cards
             </Link>
           </li>
           <li className="nav-item">
             <Link href="/sessions" className="nav-link" onClick={closeMenu}>
-              📋 Sessions
+              <span className="nav-icon">☰</span> Sessions
             </Link>
           </li>
         </ul>
