@@ -29,19 +29,22 @@ const CARD_TYPE_CONFIG = {
     icon: '💪',
     label: 'Exercise',
     color: '#6b4d8a',
-    timeField: 'duration_minutes'
+    timeField: 'duration_minutes',
+    categoryField: 'category'
   },
   [CARD_TYPES.STORY]: {
     icon: '📖',
     label: 'Story',
     color: '#e67e22',
-    timeField: 'time'
+    timeField: 'time',
+    categoryField: 'mood'
   },
   [CARD_TYPES.PRACTICAL]: {
     icon: '🔔',
     label: 'Practical',
     color: '#27ae60',
-    timeField: 'time'
+    timeField: 'time',
+    categoryField: null
   }
 };
 
@@ -52,16 +55,16 @@ function getCardType(id) {
   return CARD_TYPES.EXERCISE;
 }
 
-// Normalize cards to a common format
+// Normalize cards to a common format using CARD_TYPE_CONFIG
 function normalizeCard(item, type) {
+  const config = CARD_TYPE_CONFIG[type];
   return {
     id: item.id,
     title: item.title,
-    time: type === CARD_TYPES.EXERCISE ? (item.duration_minutes || 0) : (item.time || 0),
+    time: item[config.timeField] || 0,
     type: type,
     tags: item.tags || [],
-    category: type === CARD_TYPES.EXERCISE ? item.category : 
-              type === CARD_TYPES.STORY ? item.mood : null,
+    category: config.categoryField ? item[config.categoryField] : null,
     originalItem: item
   };
 }
@@ -82,6 +85,8 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
   const [selectedTypes, setSelectedTypes] = useState([CARD_TYPES.EXERCISE, CARD_TYPES.STORY, CARD_TYPES.PRACTICAL]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [draggedCard, setDraggedCard] = useState(null);
+  const [showAllTags, setShowAllTags] = useState(false);
+  const VISIBLE_TAGS_COUNT = 8;
 
   // Normalize all cards into a unified list
   const allCards = useMemo(() => {
@@ -409,7 +414,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
             <div className="tag-filters">
               <span className="tag-filters-label">Tags:</span>
               <div className="tag-filters-list">
-                {allTags.slice(0, 10).map(tag => (
+                {(showAllTags ? allTags : allTags.slice(0, VISIBLE_TAGS_COUNT)).map(tag => (
                   <button
                     key={tag}
                     type="button"
@@ -419,6 +424,15 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
                     #{tag}
                   </button>
                 ))}
+                {allTags.length > VISIBLE_TAGS_COUNT && (
+                  <button
+                    type="button"
+                    className="tag-show-more-btn"
+                    onClick={() => setShowAllTags(!showAllTags)}
+                  >
+                    {showAllTags ? '◂ Less' : `+${allTags.length - VISIBLE_TAGS_COUNT} more`}
+                  </button>
+                )}
                 {selectedTags.length > 0 && (
                   <button
                     type="button"

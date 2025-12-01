@@ -2073,6 +2073,23 @@ body {
   background: #ffcdd2;
 }
 
+.tag-show-more-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border: 1px dashed var(--secondary-color);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--secondary-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-show-more-btn:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+  background: var(--accent-color);
+}
+
 /* Cards List */
 .cards-list {
   flex: 1;

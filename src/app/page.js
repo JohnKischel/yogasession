@@ -22,15 +22,26 @@ function getCardType(id) {
   return CARD_TYPES.EXERCISE;
 }
 
+// Card type configuration with time field mappings
+const CARD_TYPE_CONFIG = {
+  [CARD_TYPES.EXERCISE]: { timeField: 'duration_minutes' },
+  [CARD_TYPES.STORY]: { timeField: 'time' },
+  [CARD_TYPES.PRACTICAL]: { timeField: 'time' }
+};
+
+// Helper to get duration from item based on its type
+function getItemDuration(item) {
+  const type = item.type || CARD_TYPES.EXERCISE;
+  const config = CARD_TYPE_CONFIG[type];
+  return item[config.timeField] || 0;
+}
+
 function calculateItemTimings(sessionItems) {
   let cumulativeMs = 0;
   
   return sessionItems.map((item, idx) => {
     const startMs = cumulativeMs;
-    // Stories and practicals use 'time' field, exercises use 'duration_minutes'
-    const durationMinutes = (item.type === 'story' || item.type === 'practical') 
-      ? (item.time || 0) 
-      : (item.duration_minutes || 0);
+    const durationMinutes = getItemDuration(item);
     const durationMs = durationMinutes * 60 * 1000;
     const endMs = cumulativeMs + durationMs;
     
