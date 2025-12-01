@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   getSessions, 
@@ -10,12 +10,63 @@ import {
 } from '../../lib/sessionStorage';
 import { getExercises } from '../../lib/exerciseStorage';
 import { getStories, isStoryId } from '../../lib/storyStorage';
+import { getPracticals, isPracticalId } from '../../lib/practicalStorage';
 import { getStoryBooks } from '../../lib/storyBookStorage';
 
 const CATEGORIES = ['Morgen', 'Abend', 'Kraft', 'Entspannung', 'Balance'];
 const LEVELS = ['Anfänger', 'Fortgeschritten', 'Alle Levels'];
 
-function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCancel }) {
+// Card type constants
+const CARD_TYPES = {
+  EXERCISE: 'exercise',
+  STORY: 'story',
+  PRACTICAL: 'practical'
+};
+
+// Card type configuration
+const CARD_TYPE_CONFIG = {
+  [CARD_TYPES.EXERCISE]: {
+    icon: '💪',
+    label: 'Exercise',
+    color: '#6b4d8a',
+    timeField: 'duration_minutes'
+  },
+  [CARD_TYPES.STORY]: {
+    icon: '📖',
+    label: 'Story',
+    color: '#e67e22',
+    timeField: 'time'
+  },
+  [CARD_TYPES.PRACTICAL]: {
+    icon: '🔔',
+    label: 'Practical',
+    color: '#27ae60',
+    timeField: 'time'
+  }
+};
+
+// Helper function to determine card type from ID
+function getCardType(id) {
+  if (isStoryId(id)) return CARD_TYPES.STORY;
+  if (isPracticalId(id)) return CARD_TYPES.PRACTICAL;
+  return CARD_TYPES.EXERCISE;
+}
+
+// Normalize cards to a common format
+function normalizeCard(item, type) {
+  return {
+    id: item.id,
+    title: item.title,
+    time: type === CARD_TYPES.EXERCISE ? (item.duration_minutes || 0) : (item.time || 0),
+    type: type,
+    tags: item.tags || [],
+    category: type === CARD_TYPES.EXERCISE ? item.category : 
+              type === CARD_TYPES.STORY ? item.mood : null,
+    originalItem: item
+  };
+}
+
+function SessionForm({ session, exercises, stories, practicals, storyBooks, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     title: session?.title || '',
     description: session?.description || '',
@@ -27,6 +78,70 @@ function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCanc
   });
   const [errors, setErrors] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState([CARD_TYPES.EXERCISE, CARD_TYPES.STORY, CARD_TYPES.PRACTICAL]);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [draggedCard, setDraggedCard] = useState(null);
+
+  // Normalize all cards into a unified list
+  const allCards = useMemo(() => {
+    const normalizedExercises = exercises.map(e => normalizeCard(e, CARD_TYPES.EXERCISE));
+    const normalizedStories = stories.map(s => normalizeCard(s, CARD_TYPES.STORY));
+    const normalizedPracticals = practicals.map(p => normalizeCard(p, CARD_TYPES.PRACTICAL));
+    return [...normalizedExercises, ...normalizedStories, ...normalizedPracticals];
+  }, [exercises, stories, practicals]);
+
+  // Get all unique tags from cards
+  const allTags = useMemo(() => {
+    const tags = new Set();
+    allCards.forEach(card => {
+      card.tags.forEach(tag => tags.add(tag));
+    });
+    return Array.from(tags).sort();
+  }, [allCards]);
+
+  // Filter cards based on search, types, and tags
+  const filteredCards = useMemo(() => {
+    return allCards.filter(card => {
+      // Filter by type
+      if (!selectedTypes.includes(card.type)) {
+        return false;
+      }
+      
+      // Filter by search query
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matchesTitle = card.title.toLowerCase().includes(query);
+        if (!matchesTitle) {
+          return false;
+        }
+      }
+      
+      // Filter by tags
+      if (selectedTags.length > 0) {
+        const hasSelectedTag = selectedTags.some(tag => card.tags.includes(tag));
+        if (!hasSelectedTag) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [allCards, searchQuery, selectedTypes, selectedTags]);
+
+  // Create lookup map for all items
+  const itemMap = useMemo(() => {
+    const map = new Map();
+    exercises.forEach(e => map.set(e.id, e));
+    stories.forEach(s => map.set(s.id, s));
+    practicals.forEach(p => map.set(p.id, p));
+    return map;
+  }, [exercises, stories, practicals]);
+
+  // Create story lookup map for storybooks
+  const storyMap = useMemo(() => {
+    return new Map(stories.map(s => [s.id, s]));
+  }, [stories]);
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
@@ -36,17 +151,10 @@ function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCanc
     }));
   };
 
-  const handleAddExercise = (exerciseId) => {
+  const handleAddCard = (cardId) => {
     setFormData(prev => ({
       ...prev,
-      exercises: [...prev.exercises, exerciseId]
-    }));
-  };
-
-  const handleAddStory = (storyId) => {
-    setFormData(prev => ({
-      ...prev,
-      exercises: [...prev.exercises, storyId]
+      exercises: [...prev.exercises, cardId]
     }));
   };
 
@@ -58,13 +166,25 @@ function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCanc
     }));
   };
 
-  const handleRemoveExercise = (indexToRemove) => {
+  const handleRemoveCard = (indexToRemove) => {
     setFormData(prev => ({
       ...prev,
       exercises: prev.exercises.filter((_, idx) => idx !== indexToRemove)
     }));
   };
 
+  // Drag from card container
+  const handleCardDragStart = (e, card) => {
+    setDraggedCard(card);
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', card.id);
+  };
+
+  const handleCardDragEnd = () => {
+    setDraggedCard(null);
+  };
+
+  // Drag within selected items list
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -72,11 +192,24 @@ function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCanc
 
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = draggedCard ? 'copy' : 'move';
   };
 
   const handleDrop = (e, dropIndex) => {
     e.preventDefault();
+    
+    // Handle drop from card container
+    if (draggedCard) {
+      setFormData(prev => {
+        const newExercises = [...prev.exercises];
+        newExercises.splice(dropIndex, 0, draggedCard.id);
+        return { ...prev, exercises: newExercises };
+      });
+      setDraggedCard(null);
+      return;
+    }
+    
+    // Handle reorder within list
     if (draggedIndex === null || draggedIndex === dropIndex) return;
 
     setFormData(prev => {
@@ -89,8 +222,34 @@ function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCanc
     setDraggedIndex(null);
   };
 
+  const handleDropOnList = (e) => {
+    e.preventDefault();
+    
+    // Handle drop from card container to end of list
+    if (draggedCard) {
+      handleAddCard(draggedCard.id);
+      setDraggedCard(null);
+    }
+  };
+
   const handleDragEnd = () => {
     setDraggedIndex(null);
+  };
+
+  const handleTypeToggle = (type) => {
+    if (selectedTypes.includes(type)) {
+      setSelectedTypes(selectedTypes.filter(t => t !== type));
+    } else {
+      setSelectedTypes([...selectedTypes, type]);
+    }
+  };
+
+  const handleTagToggle = (tag) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -103,17 +262,16 @@ function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCanc
     }
   };
 
-  // Create exercise lookup map
-  const exerciseMap = new Map(exercises.map(e => [e.id, e]));
-  
-  // Create story lookup map
-  const storyMap = new Map(stories.map(s => [s.id, s]));
-  
-  // Combined map for all items
-  const itemMap = new Map([...exerciseMap, ...storyMap]);
+  // Get item info for display
+  const getItemInfo = (itemId) => {
+    const item = itemMap.get(itemId);
+    const cardType = getCardType(itemId);
+    const config = CARD_TYPE_CONFIG[cardType];
+    return { item, cardType, config };
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="session-form">
+    <form onSubmit={handleSubmit} className="session-form session-builder">
       <h2>{session ? 'Session bearbeiten' : 'Neue Session erstellen'}</h2>
       
       {errors.length > 0 && (
@@ -124,224 +282,292 @@ function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCanc
         </div>
       )}
 
-      <div className="form-group">
-        <label htmlFor="title">Titel *</label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          placeholder="z.B. Morgen-Energie"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="description">Beschreibung *</label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          placeholder="Eine kurze Beschreibung der Session"
-          rows={3}
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="story">Story</label>
-        <textarea
-          id="story"
-          name="story"
-          value={formData.story}
-          onChange={handleChange}
-          placeholder="Die Geschichte/Erzählung der Session"
-          rows={3}
-        />
-      </div>
-
-      <div className="form-row">
+      {/* Session Details Section */}
+      <div className="session-details-section">
         <div className="form-group">
-          <label htmlFor="category">Kategorie *</label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-          >
-            {CATEGORIES.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="level">Level *</label>
-          <select
-            id="level"
-            name="level"
-            value={formData.level}
-            onChange={handleChange}
-          >
-            {LEVELS.map(lvl => (
-              <option key={lvl} value={lvl}>{lvl}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="duration_minutes">Dauer (Minuten) *</label>
+          <label htmlFor="title">Titel *</label>
           <input
-            type="number"
-            id="duration_minutes"
-            name="duration_minutes"
-            value={formData.duration_minutes}
+            type="text"
+            id="title"
+            name="title"
+            value={formData.title}
             onChange={handleChange}
-            min={1}
+            placeholder="z.B. Morgen-Energie"
           />
         </div>
+
+        <div className="form-group">
+          <label htmlFor="description">Beschreibung *</label>
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="Eine kurze Beschreibung der Session"
+            rows={2}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="story">Story</label>
+          <textarea
+            id="story"
+            name="story"
+            value={formData.story}
+            onChange={handleChange}
+            placeholder="Die Geschichte/Erzählung der Session"
+            rows={2}
+          />
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="category">Kategorie *</label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+            >
+              {CATEGORIES.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="level">Level *</label>
+            <select
+              id="level"
+              name="level"
+              value={formData.level}
+              onChange={handleChange}
+            >
+              {LEVELS.map(lvl => (
+                <option key={lvl} value={lvl}>{lvl}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="duration_minutes">Dauer (Minuten) *</label>
+            <input
+              type="number"
+              id="duration_minutes"
+              name="duration_minutes"
+              value={formData.duration_minutes}
+              onChange={handleChange}
+              min={1}
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="form-group">
-        <label id="exercises-label">Übungen hinzufügen</label>
-        <p className="exercise-hint">Klicken Sie auf eine Übung, um sie hinzuzufügen (mehrfach möglich)</p>
-        <div className="exercise-selector" role="group" aria-labelledby="exercises-label">
-          {exercises.length === 0 ? (
-            <p className="no-exercises">Keine Übungen verfügbar. Erstellen Sie zuerst Übungen.</p>
-          ) : (
-            exercises.map(exercise => (
+      {/* Card Builder Section - Side by Side Layout */}
+      <div className="session-builder-container">
+        {/* Left: Card Container with Filters */}
+        <div className="card-container-panel">
+          <h3>📦 Verfügbare Karten</h3>
+          
+          {/* Search */}
+          <div className="card-search">
+            <input
+              type="text"
+              placeholder="🔍 Karten suchen..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+            {searchQuery && (
               <button
                 type="button"
-                key={exercise.id}
-                className="exercise-add-btn"
-                onClick={() => handleAddExercise(exercise.id)}
-                aria-label={`${exercise.title} hinzufügen (${exercise.duration_minutes} Minuten)`}
+                className="search-clear"
+                onClick={() => setSearchQuery('')}
               >
-                <span className="exercise-add-icon">➕</span>
-                <span className="exercise-label">
-                  💪 {exercise.title} ({exercise.duration_minutes} Min.)
-                </span>
+                ✕
               </button>
-            ))
-          )}
-        </div>
-      </div>
+            )}
+          </div>
 
-      <div className="form-group">
-        <label id="stories-label">Story Elemente hinzufügen</label>
-        <p className="exercise-hint">Klicken Sie auf ein Story Element, um es hinzuzufügen</p>
-        <div className="exercise-selector" role="group" aria-labelledby="stories-label">
-          {stories.length === 0 ? (
-            <p className="no-exercises">Keine Story Elemente verfügbar. <Link href="/stories">Erstellen Sie Story Elemente</Link>.</p>
-          ) : (
-            stories.map(story => (
+          {/* Type Filters */}
+          <div className="type-filters">
+            {Object.entries(CARD_TYPE_CONFIG).map(([type, { icon, label, color }]) => (
               <button
+                key={type}
                 type="button"
-                key={story.id}
-                className="exercise-add-btn story-add-btn"
-                onClick={() => handleAddStory(story.id)}
-                aria-label={`${story.title} hinzufügen (${story.time} Minuten)`}
+                className={`type-filter-btn ${selectedTypes.includes(type) ? 'active' : ''}`}
+                style={{ '--type-color': color }}
+                onClick={() => handleTypeToggle(type)}
               >
-                <span className="exercise-add-icon">➕</span>
-                <span className="exercise-label">
-                  📖 {story.title} ({story.time} Min.)
-                </span>
+                {icon} {label}
               </button>
-            ))
-          )}
-        </div>
-      </div>
+            ))}
+          </div>
 
-      <div className="form-group">
-        <label id="storybooks-label">Story Books hinzufügen</label>
-        <p className="exercise-hint">Klicken Sie auf ein Story Book, um alle seine Story Elemente hinzuzufügen</p>
-        <div className="exercise-selector" role="group" aria-labelledby="storybooks-label">
-          {storyBooks.length === 0 ? (
-            <p className="no-exercises">Keine Story Books verfügbar. <Link href="/storybooks">Erstellen Sie Story Books</Link>.</p>
-          ) : (
-            storyBooks.map(storyBook => {
-              const bookStories = storyBook.storyIds
-                .map(id => storyMap.get(id))
-                .filter(Boolean);
-              const totalTime = bookStories.reduce((sum, s) => sum + (s.time || 0), 0);
-              return (
-                <button
-                  type="button"
-                  key={storyBook.id}
-                  className="exercise-add-btn storybook-add-btn"
-                  onClick={() => handleAddStoryBook(storyBook)}
-                  aria-label={`${storyBook.title} hinzufügen (${storyBook.storyIds.length} Stories, ${totalTime} Minuten)`}
-                >
-                  <span className="exercise-add-icon">➕</span>
-                  <span className="exercise-label">
-                    📚 {storyBook.title} ({storyBook.storyIds.length} Stories, {totalTime} Min.)
-                  </span>
-                </button>
-              );
-            })
+          {/* Tag Filters */}
+          {allTags.length > 0 && (
+            <div className="tag-filters">
+              <span className="tag-filters-label">Tags:</span>
+              <div className="tag-filters-list">
+                {allTags.slice(0, 10).map(tag => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={`tag-filter-pill ${selectedTags.includes(tag) ? 'active' : ''}`}
+                    onClick={() => handleTagToggle(tag)}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+                {selectedTags.length > 0 && (
+                  <button
+                    type="button"
+                    className="tag-clear-btn"
+                    onClick={() => setSelectedTags([])}
+                  >
+                    ✕ Clear
+                  </button>
+                )}
+              </div>
+            </div>
           )}
-        </div>
-      </div>
 
-      <div className="form-group">
-        <label>Ausgewählte Elemente ({formData.exercises.length})</label>
-        <p className="exercise-hint">Ziehen Sie die Elemente, um die Reihenfolge zu ändern</p>
-        <div className="selected-exercises-list">
-          {formData.exercises.length === 0 ? (
-            <p className="no-exercises">Noch keine Elemente ausgewählt</p>
-          ) : (
-            formData.exercises.map((itemId, idx) => {
-              const isStory = isStoryId(itemId);
-              const item = itemMap.get(itemId);
-              if (!item) {
-                console.warn(`Item with ID "${itemId}" not found`);
+          {/* Cards List */}
+          <div className="cards-list">
+            <p className="cards-hint">
+              Klicken oder ziehen Sie Karten in die Session ({filteredCards.length} verfügbar)
+            </p>
+            {filteredCards.length === 0 ? (
+              <p className="no-cards">Keine Karten gefunden</p>
+            ) : (
+              filteredCards.map(card => {
+                const config = CARD_TYPE_CONFIG[card.type];
                 return (
                   <div
-                    key={`missing-${itemId}-${idx}`}
-                    className="selected-exercise-item missing"
+                    key={card.id}
+                    className={`draggable-card card-type-${card.type}`}
+                    style={{ '--card-color': config.color }}
+                    draggable
+                    onDragStart={(e) => handleCardDragStart(e, card)}
+                    onDragEnd={handleCardDragEnd}
+                    onClick={() => handleAddCard(card.id)}
                   >
+                    <span className="card-type-icon">{config.icon}</span>
+                    <div className="card-info">
+                      <span className="card-title">{card.title}</span>
+                      <span className="card-time">{card.time} Min.</span>
+                    </div>
+                    <span className="card-add-icon">➕</span>
+                  </div>
+                );
+              })
+            )}
+
+            {/* Story Books Section */}
+            {storyBooks.length > 0 && (
+              <>
+                <div className="cards-section-divider">
+                  <span>📚 Story Books</span>
+                </div>
+                {storyBooks.map(storyBook => {
+                  const bookStories = storyBook.storyIds
+                    .map(id => storyMap.get(id))
+                    .filter(Boolean);
+                  const totalTime = bookStories.reduce((sum, s) => sum + (s.time || 0), 0);
+                  return (
+                    <div
+                      key={storyBook.id}
+                      className="draggable-card card-type-storybook"
+                      onClick={() => handleAddStoryBook(storyBook)}
+                    >
+                      <span className="card-type-icon">📚</span>
+                      <div className="card-info">
+                        <span className="card-title">{storyBook.title}</span>
+                        <span className="card-time">{storyBook.storyIds.length} Stories, {totalTime} Min.</span>
+                      </div>
+                      <span className="card-add-icon">➕</span>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Session Builder */}
+        <div className="session-builder-panel">
+          <h3>🧘 Session Ablauf ({formData.exercises.length} Elemente)</h3>
+          <p className="builder-hint">Ziehen Sie Elemente hierher oder ordnen Sie sie per Drag&Drop neu</p>
+          
+          <div 
+            className={`selected-exercises-list ${draggedCard ? 'drop-target' : ''}`}
+            onDragOver={handleDragOver}
+            onDrop={handleDropOnList}
+          >
+            {formData.exercises.length === 0 ? (
+              <div className="empty-session-placeholder">
+                <span className="empty-icon">📥</span>
+                <p>Ziehen Sie Karten hierher oder klicken Sie auf eine Karte</p>
+              </div>
+            ) : (
+              formData.exercises.map((itemId, idx) => {
+                const { item, cardType, config } = getItemInfo(itemId);
+                
+                if (!item) {
+                  return (
+                    <div
+                      key={`missing-${itemId}-${idx}`}
+                      className="selected-exercise-item missing"
+                    >
+                      <span className="exercise-number">{idx + 1}.</span>
+                      <span className="exercise-name" style={{ color: '#c62828' }}>
+                        Element nicht gefunden (ID: {itemId})
+                      </span>
+                      <button
+                        type="button"
+                        className="btn-remove-exercise"
+                        onClick={() => handleRemoveCard(idx)}
+                        aria-label="Fehlendes Element entfernen"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                }
+
+                const timeValue = cardType === CARD_TYPES.EXERCISE 
+                  ? item.duration_minutes 
+                  : item.time;
+
+                return (
+                  <div
+                    key={`${itemId}-${idx}`}
+                    className={`selected-exercise-item item-type-${cardType} ${draggedIndex === idx ? 'dragging' : ''}`}
+                    style={{ '--item-color': config.color }}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, idx)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <span className="drag-handle">☰</span>
                     <span className="exercise-number">{idx + 1}.</span>
-                    <span className="exercise-name" style={{ color: '#c62828' }}>
-                      Element nicht gefunden (ID: {itemId})
-                    </span>
+                    <span className="item-type-icon">{config.icon}</span>
+                    <span className="exercise-name">{item.title}</span>
+                    <span className="exercise-duration">({timeValue} Min.)</span>
                     <button
                       type="button"
                       className="btn-remove-exercise"
-                      onClick={() => handleRemoveExercise(idx)}
-                      aria-label="Fehlendes Element entfernen"
+                      onClick={() => handleRemoveCard(idx)}
+                      aria-label={`${item.title} entfernen`}
                     >
                       ✕
                     </button>
                   </div>
                 );
-              }
-              return (
-                <div
-                  key={`${itemId}-${idx}`}
-                  className={`selected-exercise-item ${isStory ? 'story-item' : ''} ${draggedIndex === idx ? 'dragging' : ''}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, idx)}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, idx)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <span className="drag-handle">☰</span>
-                  <span className="exercise-number">{idx + 1}.</span>
-                  <span className="exercise-name">{isStory ? '📖' : '💪'} {item.title}</span>
-                  {!isStory && <span className="exercise-duration">({item.duration_minutes} Min.)</span>}
-                  {isStory && <span className="exercise-duration">({item.time} Min.)</span>}
-                  <button
-                    type="button"
-                    className="btn-remove-exercise"
-                    onClick={() => handleRemoveExercise(idx)}
-                    aria-label={`${item.title} entfernen`}
-                  >
-                    ✕
-                  </button>
-                </div>
-              );
-            })
-          )}
+              })
+            )}
+          </div>
         </div>
       </div>
 
@@ -357,10 +583,11 @@ function SessionForm({ session, exercises, stories, storyBooks, onSubmit, onCanc
   );
 }
 
-function SessionCard({ session, exercises, stories, onEdit, onDelete }) {
+function SessionCard({ session, exercises, stories, practicals, onEdit, onDelete }) {
   const exerciseMap = new Map(exercises.map(e => [e.id, e]));
   const storyMap = new Map(stories.map(s => [s.id, s]));
-  const itemMap = new Map([...exerciseMap, ...storyMap]);
+  const practicalMap = new Map(practicals.map(p => [p.id, p]));
+  const itemMap = new Map([...exerciseMap, ...storyMap, ...practicalMap]);
   
   const sessionItems = session.exercises
     .map(id => {
@@ -369,12 +596,14 @@ function SessionCard({ session, exercises, stories, onEdit, onDelete }) {
         console.warn(`Item with ID "${id}" not found in session "${session.title}"`);
         return null;
       }
-      return { ...item, isStory: isStoryId(id) };
+      const cardType = getCardType(id);
+      return { ...item, cardType };
     })
     .filter(Boolean);
   
-  const exerciseCount = sessionItems.filter(item => !item.isStory).length;
-  const storyCount = sessionItems.filter(item => item.isStory).length;
+  const exerciseCount = sessionItems.filter(item => item.cardType === CARD_TYPES.EXERCISE).length;
+  const storyCount = sessionItems.filter(item => item.cardType === CARD_TYPES.STORY).length;
+  const practicalCount = sessionItems.filter(item => item.cardType === CARD_TYPES.PRACTICAL).length;
 
   return (
     <div className="session-card">
@@ -391,17 +620,21 @@ function SessionCard({ session, exercises, stories, onEdit, onDelete }) {
       )}
       <div className="session-meta">
         <span>⏱️ {session.duration_minutes} Minuten</span>
-        <span>💪 {exerciseCount} Übungen</span>
-        {storyCount > 0 && <span>📖 {storyCount} Story Elemente</span>}
+        {exerciseCount > 0 && <span>💪 {exerciseCount} Übungen</span>}
+        {storyCount > 0 && <span>📖 {storyCount} Stories</span>}
+        {practicalCount > 0 && <span>🔔 {practicalCount} Praktisch</span>}
       </div>
       <div className="session-exercises">
         <strong>Ablauf:</strong>
         <ol>
-          {sessionItems.map((item, idx) => (
-            <li key={`${item.id}-${idx}`}>
-              {item.isStory ? '📖' : '💪'} {item.title}
-            </li>
-          ))}
+          {sessionItems.map((item, idx) => {
+            const config = CARD_TYPE_CONFIG[item.cardType];
+            return (
+              <li key={`${item.id}-${idx}`}>
+                {config.icon} {item.title}
+              </li>
+            );
+          })}
         </ol>
       </div>
       <div className="session-card-actions">
@@ -420,6 +653,7 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [stories, setStories] = useState([]);
+  const [practicals, setPracticals] = useState([]);
   const [storyBooks, setStoryBooks] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
@@ -428,6 +662,7 @@ export default function SessionsPage() {
     setSessions(getSessions());
     setExercises(getExercises());
     setStories(getStories());
+    setPracticals(getPracticals());
     setStoryBooks(getStoryBooks());
   }, []);
 
@@ -486,6 +721,7 @@ export default function SessionsPage() {
             session={editingSession}
             exercises={exercises}
             stories={stories}
+            practicals={practicals}
             storyBooks={storyBooks}
             onSubmit={editingSession ? handleUpdate : handleCreate}
             onCancel={handleCancel}
@@ -515,6 +751,7 @@ export default function SessionsPage() {
                     session={session}
                     exercises={exercises}
                     stories={stories}
+                    practicals={practicals}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                   />
