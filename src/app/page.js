@@ -72,13 +72,6 @@ function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDrag
         {isActive ? (
           <>
             <p className="exercise-description">{isStory ? exercise.text : exercise.description}</p>
-            {exercise.tags && exercise.tags.length > 0 && (
-              <div className="exercise-tags">
-                {exercise.tags.map((tag, tagIdx) => (
-                  <span key={`${tag}-${tagIdx}`} className="exercise-tag">#{tag}</span>
-                ))}
-              </div>
-            )}
             <div className="exercise-duration">
               <span>⏱️</span>
               <span>{durationMinutes} Minuten</span>

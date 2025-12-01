@@ -143,23 +143,32 @@ body {
 }
 
 .timeline-title {
-  text-align: center;
+  text-align: left;
   color: var(--primary-color);
-  margin-bottom: 2rem;
-  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+  padding-left: 40px;
+}
+
+@media (max-width: 768px) {
+  .timeline-title {
+    padding-left: 30px;
+    font-size: 1.4rem;
+  }
 }
 
 /* Timeline */
 .timeline {
   position: relative;
   padding: 1rem 0;
+  padding-left: 40px;
 }
 
 .timeline::before {
   content: '';
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 30px;
+  transform: none;
   width: 4px;
   top: 0;
   bottom: 0;
@@ -168,15 +177,19 @@ body {
 }
 
 @media (max-width: 768px) {
+  .timeline {
+    padding-left: 30px;
+  }
+  
   .timeline::before {
-    left: 30px;
+    left: 20px;
   }
 }
 
 /* Timeline Item */
 .timeline-item {
   position: relative;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
   animation: fadeInUp 0.6s ease forwards;
   opacity: 0;
 }
@@ -201,56 +214,60 @@ body {
 /* Timeline Time Marker */
 .timeline-time {
   position: absolute;
-  left: 50%;
+  left: 30px;
   transform: translateX(-50%);
   background: var(--primary-color);
   color: white;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border-radius: 20px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   z-index: 2;
   white-space: nowrap;
 }
 
 @media (max-width: 768px) {
   .timeline-time {
-    left: 30px;
+    left: 20px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
   }
 }
 
 /* Exercise Card */
 .exercise-card {
   background: white;
-  border-radius: 16px;
-  padding: 1.5rem 2rem;
-  margin-top: 2.5rem;
-  margin-left: calc(50% + 40px);
-  width: calc(50% - 60px);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 2rem;
+  margin-left: 50px;
+  width: calc(100% - 70px);
   box-shadow: var(--card-shadow);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   position: relative;
 }
 
 .exercise-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(107, 77, 138, 0.2);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(107, 77, 138, 0.2);
 }
 
+/* Remove alternating layout - all cards on the right side now */
 .timeline-item:nth-child(even) .exercise-card {
-  margin-left: 20px;
-  margin-right: calc(50% + 40px);
+  margin-left: 50px;
+  margin-right: 0;
 }
 
 @media (max-width: 768px) {
   .exercise-card {
-    margin-left: 70px;
-    width: calc(100% - 90px);
+    margin-left: 40px;
+    width: calc(100% - 50px);
+    padding: 0.875rem 1rem;
   }
   
   .timeline-item:nth-child(even) .exercise-card {
-    margin-left: 70px;
-    margin-right: 20px;
+    margin-left: 40px;
+    margin-right: 0;
   }
 }
 
@@ -259,24 +276,27 @@ body {
   content: '';
   position: absolute;
   top: 1rem;
-  width: 30px;
+  left: -20px;
+  width: 20px;
   height: 3px;
   background: var(--timeline-line-color);
 }
 
+/* All cards have connection line on the left now */
 .timeline-item:nth-child(odd) .exercise-card::before {
-  right: 100%;
+  left: -20px;
+  right: auto;
 }
 
 .timeline-item:nth-child(even) .exercise-card::before {
-  left: 100%;
+  left: -20px;
+  right: auto;
 }
 
 @media (max-width: 768px) {
   .exercise-card::before {
-    left: -30px !important;
-    right: auto !important;
-    width: 20px;
+    left: -20px;
+    width: 15px;
   }
 }
 
@@ -284,22 +304,22 @@ body {
 .card-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .exercise-icon {
-  font-size: 2.5rem;
+  font-size: 2rem;
 }
 
 .exercise-title {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   color: var(--primary-color);
   margin: 0;
 }
 
 .exercise-category {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--secondary-color);
   font-weight: 500;
 }
@@ -307,8 +327,9 @@ body {
 /* Card Body */
 .exercise-description {
   color: #555;
-  margin-bottom: 1rem;
-  line-height: 1.7;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+  font-size: 0.95rem;
 }
 
 /* Tags */
@@ -332,10 +353,10 @@ body {
 .exercise-duration {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
   font-weight: 600;
   color: var(--primary-color);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 /* Footer */
@@ -868,11 +889,18 @@ body {
 }
 
 .drag-hint {
-  text-align: center;
+  text-align: left;
   color: var(--secondary-color);
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
   font-style: italic;
+  padding-left: 40px;
+}
+
+@media (max-width: 768px) {
+  .drag-hint {
+    padding-left: 30px;
+  }
 }
 
 .timeline-item.dragging {
@@ -1245,19 +1273,19 @@ body {
 
 /* Active and Collapsed Timeline Item States */
 .timeline-item.active .exercise-card {
-  transform: scale(1.02);
-  box-shadow: 0 8px 30px rgba(107, 77, 138, 0.3);
+  transform: scale(1.01);
+  box-shadow: 0 6px 20px rgba(107, 77, 138, 0.25);
   border: 2px solid var(--primary-color);
 }
 
 .timeline-item.active .timeline-time {
-  transform: translateX(-50%) scale(1.1);
-  box-shadow: 0 4px 15px rgba(107, 77, 138, 0.3);
+  transform: translateX(-50%) scale(1.05);
+  box-shadow: 0 3px 10px rgba(107, 77, 138, 0.3);
 }
 
 @media (max-width: 768px) {
   .timeline-item.active .timeline-time {
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
 }
 
@@ -1272,7 +1300,7 @@ body {
 /* Collapsed description for non-active items */
 .exercise-description-collapsed {
   color: #888;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   line-height: 1.4;
   font-style: italic;
 }
