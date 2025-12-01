@@ -1719,6 +1719,165 @@ body {
   margin: 0 auto;
 }
 
+/* =================================
+   Modal Styles
+   ================================= */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--accent-color);
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: var(--primary-color);
+  font-size: 1.4rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #888;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: color 0.2s ease;
+}
+
+.modal-close:hover {
+  color: #c62828;
+}
+
+/* Card Type Selector */
+.card-type-selector {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--accent-color);
+  background: var(--background-color);
+}
+
+.card-type-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 2px solid var(--accent-color);
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.card-type-btn:hover {
+  border-color: var(--type-color);
+  transform: translateY(-2px);
+}
+
+.card-type-btn.active {
+  border-color: var(--type-color);
+  background: var(--type-color);
+  color: white;
+}
+
+.card-type-icon {
+  font-size: 1.5rem;
+}
+
+.card-type-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+/* Card Type Indicator (for edit mode) */
+.card-type-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.5rem;
+  background: var(--background-color);
+  border-bottom: 1px solid var(--accent-color);
+}
+
+.card-type-indicator .card-type-icon {
+  font-size: 1.25rem;
+}
+
+.card-type-indicator .card-type-label {
+  color: var(--type-color);
+  font-weight: 600;
+}
+
+/* Modal Form */
+.modal-form {
+  padding: 1.5rem;
+}
+
+.modal-form .form-group {
+  margin-bottom: 1.25rem;
+}
+
+.modal-form .form-actions {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--accent-color);
+}
+
+/* Cards Page Specific */
+.cards-page .btn-create-card {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  font-size: 1rem;
+  padding: 0.875rem 1.5rem;
+}
+
 @media (max-width: 768px) {
   .storybooks-page .filter-row {
     flex-direction: column;

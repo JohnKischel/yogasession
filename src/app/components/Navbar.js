@@ -35,27 +35,17 @@ export default function Navbar() {
         <ul className={`nav-menu ${isOpen ? 'active' : ''}`}>
           <li className="nav-item">
             <Link href="/" className="nav-link" onClick={closeMenu}>
-              🏠 Main Page
+              🏠 Home
             </Link>
           </li>
           <li className="nav-item">
-            <Link href="/exercises" className="nav-link" onClick={closeMenu}>
-              💪 Exercise
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link href="/stories" className="nav-link" onClick={closeMenu}>
-              📖 Story
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link href="/storybooks" className="nav-link" onClick={closeMenu}>
-              📚 Story Books
+            <Link href="/cards" className="nav-link" onClick={closeMenu}>
+              🎴 Cards
             </Link>
           </li>
           <li className="nav-item">
             <Link href="/sessions" className="nav-link" onClick={closeMenu}>
-              📋 Session
+              📋 Sessions
             </Link>
           </li>
         </ul>
