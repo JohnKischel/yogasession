@@ -69,7 +69,7 @@ function truncateText(text, maxLength = 50) {
 const USER_SCROLL_RESET_DELAY = 3000; // Reset auto-scroll after this many ms of user inactivity
 const SCROLL_THROTTLE_MS = 500; // Throttle scroll updates
 
-function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDragEnd, isDragging, isActive, isPast }) {
+function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDragEnd, onTouchStart, onTouchMove, onTouchEnd, isDragging, isActive, isPast }) {
   const isStory = exercise.type === 'story';
   const isPractical = exercise.type === 'practical';
   // Use duration_minutes which is normalized in calculateItemTimings for all types
@@ -109,6 +109,9 @@ function ExerciseCard({ exercise, index, onDragStart, onDragOver, onDrop, onDrag
       onDragOver={(e) => onDragOver(e, index)}
       onDrop={(e) => onDrop(e, index)}
       onDragEnd={onDragEnd}
+      onTouchStart={(e) => onTouchStart(e, index)}
+      onTouchMove={(e) => onTouchMove(e, index)}
+      onTouchEnd={(e) => onTouchEnd(e, index)}
     >
       <div className={`timeline-time ${isStory ? 'story-marker' : ''} ${isPractical ? 'practical-marker' : ''}`}>
         {getTimeLabel()}
@@ -454,6 +457,107 @@ export default function Home() {
     setDraggedIndex(null);
   }, []);
 
+  // Touch event handlers for mobile drag and drop
+  const touchStartY = useRef(null);
+  const touchStartX = useRef(null);
+  const longPressTimer = useRef(null);
+  const [isDraggingTouch, setIsDraggingTouch] = useState(false);
+  const draggedElementRef = useRef(null);
+  const [touchDraggedIndex, setTouchDraggedIndex] = useState(null);
+  const [dropIndicatorIndex, setDropIndicatorIndex] = useState(null);
+
+  const handleTouchStart = useCallback((e, index) => {
+    // Prevent default to stop context menu on long press
+    const touch = e.touches[0];
+    touchStartY.current = touch.clientY;
+    touchStartX.current = touch.clientX;
+    draggedElementRef.current = e.currentTarget;
+    
+    // Set a timer for long press detection
+    longPressTimer.current = setTimeout(() => {
+      setIsDraggingTouch(true);
+      setDraggedIndex(index);
+      setTouchDraggedIndex(index);
+      // Haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 200); // 200ms long press
+  }, []);
+
+  const handleTouchMove = useCallback((e, index) => {
+    if (!isDraggingTouch) {
+      // Clear timer if moved before long press completed
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+        longPressTimer.current = null;
+      }
+      return;
+    }
+
+    // Prevent scrolling while dragging
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const currentY = touch.clientY;
+    
+    // Find which item we're hovering over
+    const elements = document.querySelectorAll('.timeline-item');
+    let hoveredIndex = null;
+    
+    elements.forEach((el, idx) => {
+      const rect = el.getBoundingClientRect();
+      if (currentY >= rect.top && currentY <= rect.bottom) {
+        hoveredIndex = idx;
+      }
+    });
+    
+    if (hoveredIndex !== null && hoveredIndex !== touchDraggedIndex) {
+      setDropIndicatorIndex(hoveredIndex);
+    }
+  }, [isDraggingTouch, touchDraggedIndex]);
+
+  const handleTouchEnd = useCallback((e, index) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+
+    if (!isDraggingTouch) {
+      return;
+    }
+
+    // Perform the drop
+    if (touchDraggedIndex !== null && dropIndicatorIndex !== null && touchDraggedIndex !== dropIndicatorIndex) {
+      const newOrder = [...currentExerciseOrder];
+      const [draggedItem] = newOrder.splice(touchDraggedIndex, 1);
+      newOrder.splice(dropIndicatorIndex, 0, draggedItem);
+      
+      setCurrentExerciseOrder(newOrder);
+      
+      // Save to localStorage if it's not the default session
+      if (selectedSessionId !== 'default') {
+        reorderSessionExercises(selectedSessionId, newOrder);
+      }
+    }
+
+    // Reset states
+    setIsDraggingTouch(false);
+    setDraggedIndex(null);
+    setTouchDraggedIndex(null);
+    setDropIndicatorIndex(null);
+    draggedElementRef.current = null;
+  }, [isDraggingTouch, touchDraggedIndex, dropIndicatorIndex, currentExerciseOrder, selectedSessionId]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+      }
+    };
+  }, []);
+
   const handleSessionChange = (e) => {
     setSelectedSessionId(e.target.value);
     // Reset timer when session changes
@@ -536,6 +640,9 @@ export default function Home() {
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
                 onDragEnd={handleDragEnd}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
                 isDragging={draggedIndex === index}
                 isActive={index === currentItemIndex}
                 isPast={index < currentItemIndex}

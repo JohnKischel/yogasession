@@ -993,10 +993,39 @@ h1, h2, h3 {
 
 .timeline-item[draggable="true"] {
   cursor: grab;
+  /* Prevent text selection during drag */
+  user-select: none;
+  -webkit-user-select: none;
+  /* Prevent callout on touch devices */
+  -webkit-touch-callout: none;
 }
 
 .timeline-item[draggable="true"]:active {
   cursor: grabbing;
+}
+
+/* Touch-specific improvements for mobile drag and drop */
+@media (hover: none) and (pointer: coarse) {
+  .timeline-item[draggable="true"] {
+    /* Prevent context menu on long press */
+    touch-action: none;
+  }
+  
+  /* Make drag handle more prominent on touch devices */
+  .drag-handle {
+    font-size: 1.4rem;
+    padding: 0.5rem;
+    touch-action: none;
+  }
+  
+  /* Larger touch targets for mobile */
+  .exercise-card {
+    padding: 1.25rem;
+  }
+  
+  .card-header {
+    gap: 1rem;
+  }
 }
 
 /* Exercise Add Button Styles */
@@ -1352,6 +1381,54 @@ h1, h2, h3 {
 .floating-controls .btn-reset {
   padding: 0.75rem 1rem;
   font-size: 1rem;
+}
+
+/* Mobile improvements for floating controls */
+@media (max-width: 768px) {
+  .floating-controls {
+    padding: 1rem 0.75rem;
+  }
+  
+  .floating-controls-inner {
+    gap: 0.75rem;
+  }
+  
+  .floating-controls .session-buttons {
+    width: 100%;
+    gap: 0.5rem;
+  }
+  
+  .floating-controls .btn-start {
+    flex: 1;
+    min-width: 100px;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+  }
+  
+  .btn-nav,
+  .btn-sync,
+  .floating-controls .btn-reset {
+    padding: 0.875rem 1rem;
+    min-width: 48px;
+    font-size: 1.1rem;
+  }
+  
+  .floating-controls .timer-display {
+    font-size: 1.125rem;
+  }
+}
+
+/* Improved touch targets for very small screens */
+@media (max-width: 480px) {
+  .floating-controls .session-buttons {
+    gap: 0.375rem;
+  }
+  
+  .btn-nav,
+  .btn-sync,
+  .floating-controls .btn-reset {
+    padding: 0.875rem 0.75rem;
+  }
 }
 
 /* Add bottom padding to footer to account for floating controls */
@@ -2443,4 +2520,92 @@ h1, h2, h3 {
 
 .practical-timeline-item .timeline-time.practical-marker {
   background: linear-gradient(135deg, var(--practical-color) 0%, #6db88e 100%);
+}
+
+/* Mobile-specific improvements for session builder */
+@media (hover: none) and (pointer: coarse) {
+  /* Prevent context menu and improve touch interactions */
+  .draggable-card,
+  .selected-exercise-item {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: none;
+  }
+  
+  /* Larger touch targets on mobile */
+  .draggable-card {
+    padding: 1rem;
+    min-height: 60px;
+  }
+  
+  .selected-exercise-item {
+    padding: 1rem 0.75rem;
+    min-height: 60px;
+  }
+  
+  .selected-exercise-item .drag-handle {
+    font-size: 1.4rem;
+    padding: 0.5rem;
+  }
+  
+  /* Better spacing for mobile */
+  .session-builder-container {
+    gap: 1rem;
+  }
+  
+  .card-container-panel,
+  .session-builder-panel {
+    padding: 1rem;
+  }
+  
+  /* Improved button sizes for touch */
+  .btn-remove-exercise {
+    width: 36px;
+    height: 36px;
+    font-size: 1.2rem;
+  }
+  
+  .type-filter-btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9rem !important;
+    min-height: 44px;
+  }
+  
+  .tag-filter-pill {
+    padding: 0.375rem 0.75rem !important;
+    font-size: 0.85rem !important;
+    min-height: 36px;
+  }
+}
+
+/* Additional mobile optimizations for smaller screens */
+@media (max-width: 768px) {
+  .session-builder-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-container-panel,
+  .session-builder-panel {
+    max-height: 400px;
+  }
+  
+  .session-form .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .session-form .form-group {
+    width: 100%;
+  }
+  
+  /* Better hints for mobile users */
+  .cards-hint,
+  .builder-hint {
+    font-size: 0.85rem;
+  }
+  
+  .drag-hint {
+    font-size: 0.9rem;
+  }
 }
