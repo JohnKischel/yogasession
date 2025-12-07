@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { 
   getExercises, 
   createExercise, 
-  deleteExercise 
+  deleteExercise,
+  initializeDefaultExercises 
 } from '../../lib/exerciseStorage';
 
 const CATEGORIES = ['Stehübungen', 'Liegeübungen', 'Sitzübungen', 'Gleichgewicht', 'Entspannung'];
@@ -168,7 +169,9 @@ export default function ExercisesPage() {
   const [exercises, setExercises] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
+    // Initialize default exercises if needed
+    await initializeDefaultExercises();
     setExercises(getExercises());
   }, []);
 
