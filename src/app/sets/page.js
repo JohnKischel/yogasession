@@ -21,7 +21,7 @@ import {
   updatePracticalSet, 
   deletePracticalSet 
 } from '../../lib/practicalSetStorage';
-import { getExercises } from '../../lib/exerciseStorage';
+import { getExercises, initializeDefaultExercises } from '../../lib/exerciseStorage';
 import { getStories } from '../../lib/storyStorage';
 import { getPracticals } from '../../lib/practicalStorage';
 
@@ -305,8 +305,11 @@ export default function SetsPage() {
   const [viewingSet, setViewingSet] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const loadData = useCallback(() => {
-    // Initialize default exercise sets
+  const loadData = useCallback(async () => {
+    // Initialize default exercises first
+    await initializeDefaultExercises();
+    
+    // Then initialize default exercise sets
     initializeDefaultExerciseSets();
     
     setExerciseSets(getExerciseSets());

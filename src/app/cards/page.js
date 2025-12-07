@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import CardModal, { CARD_TYPES, CARD_TYPE_CONFIG } from '../components/CardModal';
-import { getExercises, createExercise, updateExercise, deleteExercise } from '../../lib/exerciseStorage';
+import { getExercises, createExercise, updateExercise, deleteExercise, initializeDefaultExercises } from '../../lib/exerciseStorage';
 import { getStories, createStory, updateStory, deleteStory } from '../../lib/storyStorage';
 import { getPracticals, createPractical, updatePractical, deletePractical } from '../../lib/practicalStorage';
 
@@ -187,7 +187,10 @@ export default function CardsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
+    // Initialize default exercises if needed
+    await initializeDefaultExercises();
+    
     setExercises(getExercises());
     setStories(getStories());
     setPracticals(getPracticals());

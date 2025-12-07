@@ -207,3 +207,25 @@ export function clearExercises() {
   
   localStorage.removeItem(STORAGE_KEY);
 }
+
+/**
+ * Initialize default exercises from data/exercises.json if localStorage is empty
+ * This should be called on app initialization
+ */
+export async function initializeDefaultExercises() {
+  const exercises = getExercises();
+  
+  // Only initialize if localStorage is empty
+  if (exercises.length === 0) {
+    try {
+      // Import the exercises from the JSON file dynamically
+      const defaultExercises = await import('../../data/exercises.json').then(module => module.default);
+      saveExercises(defaultExercises);
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize default exercises:', error);
+    }
+  }
+  
+  return false;
+}
