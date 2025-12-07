@@ -2171,7 +2171,8 @@ h1, h2, h3 {
   border: 2px solid var(--accent-color);
   border-radius: 12px;
   padding: 1rem;
-  max-height: 600px;
+  max-height: 70vh; /* Use viewport height for better responsiveness */
+  min-height: 400px; /* Ensure minimum usable height */
   display: flex;
   flex-direction: column;
 }
@@ -2365,7 +2366,26 @@ input.search-input:focus {
 .cards-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 0.5rem;
+  padding-bottom: 30px; /* Space for scroll indicator */
+  /* Ensure smooth scrolling on all devices */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  position: relative;
+}
+
+/* Scroll indicator for cards list */
+.cards-list::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to top, var(--background-color), transparent);
+  pointer-events: none;
+  opacity: 0.8;
 }
 
 .cards-hint {
@@ -2498,7 +2518,8 @@ input.search-input:focus {
   border: 2px solid var(--primary-color);
   border-radius: 16px;
   padding: 1.25rem;
-  max-height: 600px;
+  max-height: 70vh; /* Use viewport height for better responsiveness */
+  min-height: 400px; /* Ensure minimum usable height */
   display: flex;
   flex-direction: column;
 }
@@ -2519,12 +2540,16 @@ input.search-input:focus {
 .session-builder-panel .selected-exercises-list {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 200px;
   border: 2px dashed var(--accent-color);
   border-radius: 12px;
   padding: 0.875rem;
   background: var(--background-color);
   transition: all 0.2s ease;
+  /* Ensure smooth scrolling on all devices */
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .session-builder-panel .selected-exercises-list.drop-target {
@@ -2629,15 +2654,15 @@ input.search-input:focus {
     font-size: 1.2rem;
   }
   
-  .type-filter-btn {
-    padding: 0.5rem 1rem !important;
-    font-size: 0.9rem !important;
+  .type-filters .type-filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
     min-height: 44px;
   }
   
-  .tag-filter-pill {
-    padding: 0.375rem 0.75rem !important;
-    font-size: 0.85rem !important;
+  .tag-filters .tag-filter-pill {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.85rem;
     min-height: 36px;
   }
 }
@@ -2650,7 +2675,8 @@ input.search-input:focus {
   
   .card-container-panel,
   .session-builder-panel {
-    max-height: 400px;
+    max-height: 60vh; /* Use viewport height for better mobile experience */
+    min-height: 300px; /* Ensure minimum usable height */
   }
   
   .session-form .form-row {
@@ -2670,6 +2696,38 @@ input.search-input:focus {
   
   .drag-hint {
     font-size: 0.9rem;
+  }
+}
+
+/* Additional optimizations for very small mobile screens */
+@media (max-width: 480px) {
+  .card-container-panel,
+  .session-builder-panel {
+    max-height: 55vh; /* More space-efficient on small screens */
+    min-height: 250px;
+  }
+  
+  /* Make cards more compact on very small screens */
+  .draggable-card {
+    padding: 0.75rem;
+  }
+  
+  .draggable-card .card-title {
+    font-size: 0.8rem;
+  }
+  
+  .draggable-card .card-time {
+    font-size: 0.7rem;
+  }
+  
+  /* Improve filter button layout on small screens */
+  .type-filters {
+    gap: 0.375rem;
+  }
+  
+  .type-filters .type-filter-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
 }
 
