@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { 
   getSessions, 
@@ -241,6 +241,161 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
     setDraggedIndex(null);
   };
 
+  // Touch event handlers for mobile drag and drop
+  const touchStartY = useRef(null);
+  const longPressTimer = useRef(null);
+  const [isDraggingTouch, setIsDraggingTouch] = useState(false);
+  const [touchDraggedCardIndex, setTouchDraggedCardIndex] = useState(null);
+  const [touchDropIndicator, setTouchDropIndicator] = useState(null);
+
+  // Touch handlers for cards in container
+  const handleCardTouchStart = (e, card) => {
+    const touch = e.touches[0];
+    touchStartY.current = touch.clientY;
+    
+    longPressTimer.current = setTimeout(() => {
+      setDraggedCard(card);
+      setIsDraggingTouch(true);
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 200);
+  };
+
+  const handleCardTouchMove = (e) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+
+    if (!isDraggingTouch || !draggedCard) return;
+    
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const currentY = touch.clientY;
+    
+    // Check if over the selected items list
+    const selectedList = document.querySelector('.selected-exercises-list');
+    if (selectedList) {
+      const rect = selectedList.getBoundingClientRect();
+      if (currentY >= rect.top && currentY <= rect.bottom) {
+        const items = document.querySelectorAll('.selected-exercise-item');
+        let hoveredIndex = null;
+        
+        items.forEach((el, idx) => {
+          const itemRect = el.getBoundingClientRect();
+          if (currentY >= itemRect.top && currentY <= itemRect.bottom) {
+            hoveredIndex = idx;
+          }
+        });
+        
+        if (hoveredIndex !== null) {
+          setTouchDropIndicator(hoveredIndex);
+        } else if (items.length === 0) {
+          setTouchDropIndicator(0);
+        }
+      }
+    }
+  };
+
+  const handleCardTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+
+    if (isDraggingTouch && draggedCard && touchDropIndicator !== null) {
+      setFormData(prev => {
+        const newExercises = [...prev.exercises];
+        newExercises.splice(touchDropIndicator, 0, draggedCard.id);
+        return { ...prev, exercises: newExercises };
+      });
+    } else if (isDraggingTouch && draggedCard) {
+      // Drop at end
+      handleAddCard(draggedCard.id);
+    }
+
+    setIsDraggingTouch(false);
+    setDraggedCard(null);
+    setTouchDropIndicator(null);
+  };
+
+  // Touch handlers for selected items reordering
+  const handleItemTouchStart = (e, index) => {
+    const touch = e.touches[0];
+    touchStartY.current = touch.clientY;
+    
+    longPressTimer.current = setTimeout(() => {
+      setDraggedIndex(index);
+      setTouchDraggedCardIndex(index);
+      setIsDraggingTouch(true);
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 200);
+  };
+
+  const handleItemTouchMove = (e, index) => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+
+    if (!isDraggingTouch || touchDraggedCardIndex === null) return;
+    
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const currentY = touch.clientY;
+    
+    const items = document.querySelectorAll('.selected-exercise-item');
+    let hoveredIndex = null;
+    
+    items.forEach((el, idx) => {
+      const rect = el.getBoundingClientRect();
+      if (currentY >= rect.top && currentY <= rect.bottom) {
+        hoveredIndex = idx;
+      }
+    });
+    
+    if (hoveredIndex !== null && hoveredIndex !== touchDraggedCardIndex) {
+      setTouchDropIndicator(hoveredIndex);
+    }
+  };
+
+  const handleItemTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+
+    if (!isDraggingTouch) return;
+
+    if (touchDraggedCardIndex !== null && touchDropIndicator !== null && touchDraggedCardIndex !== touchDropIndicator) {
+      setFormData(prev => {
+        const newExercises = [...prev.exercises];
+        const [draggedItem] = newExercises.splice(touchDraggedCardIndex, 1);
+        newExercises.splice(touchDropIndicator, 0, draggedItem);
+        return { ...prev, exercises: newExercises };
+      });
+    }
+
+    setIsDraggingTouch(false);
+    setDraggedIndex(null);
+    setTouchDraggedCardIndex(null);
+    setTouchDropIndicator(null);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current);
+      }
+    };
+  }, []);
+
   const handleTypeToggle = (type) => {
     if (selectedTypes.includes(type)) {
       setSelectedTypes(selectedTypes.filter(t => t !== type));
@@ -464,6 +619,9 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
                     draggable
                     onDragStart={(e) => handleCardDragStart(e, card)}
                     onDragEnd={handleCardDragEnd}
+                    onTouchStart={(e) => handleCardTouchStart(e, card)}
+                    onTouchMove={handleCardTouchMove}
+                    onTouchEnd={handleCardTouchEnd}
                     onClick={() => handleAddCard(card.id)}
                   >
                     <span className="card-type-icon">{config.icon}</span>
@@ -563,6 +721,9 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, idx)}
                     onDragEnd={handleDragEnd}
+                    onTouchStart={(e) => handleItemTouchStart(e, idx)}
+                    onTouchMove={(e) => handleItemTouchMove(e, idx)}
+                    onTouchEnd={handleItemTouchEnd}
                   >
                     <span className="drag-handle">☰</span>
                     <span className="exercise-number">{idx + 1}.</span>
