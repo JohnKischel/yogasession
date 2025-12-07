@@ -54,5 +54,109 @@
     "category": "Drehübungen",
     "tags": ["wirbelsäule", "entspannung", "drehung"],
     "duration_minutes": 4
+  },
+  {
+    "id": "8",
+    "title": "Herabschauender Hund",
+    "description": "Klassische umgekehrte V-Position zur Dehnung und Kräftigung des gesamten Körpers.",
+    "category": "Stehübungen",
+    "tags": ["dehnung", "kraft", "ganzkörper"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "9",
+    "title": "Krieger II",
+    "description": "Kraftvolle Standposition zur Stärkung der Beine und Öffnung der Hüften.",
+    "category": "Stehübungen",
+    "tags": ["kraft", "balance", "beine", "hüftöffnung"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "10",
+    "title": "Dreieck",
+    "description": "Stehende Seitbeuge zur Dehnung der Körperseiten und Stärkung der Beine.",
+    "category": "Stehübungen",
+    "tags": ["dehnung", "kraft", "seitbeuge"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "11",
+    "title": "Kind",
+    "description": "Entspannende Ruheposition zur Dehnung des Rückens und Beruhigung des Geistes.",
+    "category": "Sitzübungen",
+    "tags": ["entspannung", "dehnung", "rücken"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "12",
+    "title": "Katze-Kuh",
+    "description": "Fließende Bewegung zwischen Rund- und Hohlkreuz zur Mobilisierung der Wirbelsäule.",
+    "category": "Stehübungen",
+    "tags": ["mobilität", "wirbelsäule", "aufwärmen"],
+    "duration_minutes": 2
+  },
+  {
+    "id": "13",
+    "title": "Brücke",
+    "description": "Liegende Rückbeuge zur Stärkung von Rücken, Gesäß und Beinen.",
+    "category": "Liegeübungen",
+    "tags": ["kraft", "rückbeuge", "gesäß"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "14",
+    "title": "Taube",
+    "description": "Intensive Hüftöffnung zur Dehnung der Hüftbeuger und Gesäßmuskulatur.",
+    "category": "Sitzübungen",
+    "tags": ["hüftöffnung", "dehnung", "flexibilität"],
+    "duration_minutes": 4
+  },
+  {
+    "id": "15",
+    "title": "Boot",
+    "description": "Kräftigende Bauchmuskelübung zur Stärkung der Körpermitte.",
+    "category": "Sitzübungen",
+    "tags": ["kraft", "core", "balance"],
+    "duration_minutes": 2
+  },
+  {
+    "id": "16",
+    "title": "Planke",
+    "description": "Ganzkörper-Kräftigungsübung für Arme, Core und Beine.",
+    "category": "Stehübungen",
+    "tags": ["kraft", "core", "ganzkörper"],
+    "duration_minutes": 2
+  },
+  {
+    "id": "17",
+    "title": "Vorbeuge im Stehen",
+    "description": "Intensive Dehnung der Beinrückseiten und des unteren Rückens.",
+    "category": "Stehübungen",
+    "tags": ["dehnung", "beine", "rücken"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "18",
+    "title": "Fisch",
+    "description": "Liegende Rückbeuge zur Öffnung von Brust und Kehle.",
+    "category": "Liegeübungen",
+    "tags": ["rückbeuge", "brust", "entspannung"],
+    "duration_minutes": 3
+  },
+  {
+    "id": "19",
+    "title": "Heuschrecke",
+    "description": "Rückenstärkende Übung in Bauchlage.",
+    "category": "Liegeübungen",
+    "tags": ["kraft", "rücken", "gesäß"],
+    "duration_minutes": 2
+  },
+  {
+    "id": "20",
+    "title": "Krähe",
+    "description": "Armbalance zur Stärkung von Armen und Core sowie Verbesserung des Gleichgewichts.",
+    "category": "Balanceübungen",
+    "tags": ["balance", "kraft", "arme", "konzentration"],
+    "duration_minutes": 3
   }
 ]

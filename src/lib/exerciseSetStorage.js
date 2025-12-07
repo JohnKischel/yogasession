@@ -215,13 +215,13 @@ export function initializeDefaultExerciseSets() {
   const hasDefaultSet = sets.some(s => s.isDefault);
   
   if (!hasDefaultSet) {
-    // Create default starter set with all exercise IDs from 1-7
+    // Create default starter set with all exercise IDs from 1-20
     // These match the IDs in data/exercises.json
     const defaultSet = {
       id: 'exercise-set-default',
       name: 'Yoga Starter Set',
-      description: 'A complete collection of all available yoga exercises',
-      exerciseIds: ['1', '2', '3', '4', '5', '6', '7'],
+      description: 'A complete collection of all available yoga exercises for beginners and advanced practitioners',
+      exerciseIds: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'],
       isDefault: true,
       createdAt: new Date().toISOString()
     };
