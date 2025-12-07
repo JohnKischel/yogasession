@@ -2368,6 +2368,7 @@ input.search-input:focus {
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 0.5rem;
+  padding-bottom: 30px; /* Space for scroll indicator */
   /* Ensure smooth scrolling on all devices */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
@@ -2377,7 +2378,7 @@ input.search-input:focus {
 /* Scroll indicator for cards list */
 .cards-list::after {
   content: '';
-  position: sticky;
+  position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
@@ -2653,15 +2654,15 @@ input.search-input:focus {
     font-size: 1.2rem;
   }
   
-  .type-filter-btn {
-    padding: 0.5rem 1rem !important;
-    font-size: 0.9rem !important;
+  .type-filters .type-filter-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
     min-height: 44px;
   }
   
-  .tag-filter-pill {
-    padding: 0.375rem 0.75rem !important;
-    font-size: 0.85rem !important;
+  .tag-filters .tag-filter-pill {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.85rem;
     min-height: 36px;
   }
 }
@@ -2696,11 +2697,6 @@ input.search-input:focus {
   .drag-hint {
     font-size: 0.9rem;
   }
-  
-  /* Ensure cards list has proper scrolling */
-  .cards-list {
-    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-  }
 }
 
 /* Additional optimizations for very small mobile screens */
@@ -2730,8 +2726,8 @@ input.search-input:focus {
   }
   
   .type-filters .type-filter-btn {
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.8rem !important;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
   }
 }
 
