@@ -44,6 +44,11 @@ export default function Navbar() {
             </Link>
           </li>
           <li className="nav-item">
+            <Link href="/sets" className="nav-link" onClick={closeMenu}>
+              <span className="nav-icon">📚</span> Sets
+            </Link>
+          </li>
+          <li className="nav-item">
             <Link href="/sessions" className="nav-link" onClick={closeMenu}>
               <span className="nav-icon">☰</span> Sessions
             </Link>
