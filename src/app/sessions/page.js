@@ -8,7 +8,7 @@ import {
   updateSession, 
   deleteSession 
 } from '../../lib/sessionStorage';
-import { getExercises } from '../../lib/exerciseStorage';
+import { getExercises, initializeDefaultExercises } from '../../lib/exerciseStorage';
 import { getStories, isStoryId } from '../../lib/storyStorage';
 import { getPracticals, isPracticalId } from '../../lib/practicalStorage';
 import { getStoryBooks } from '../../lib/storyBookStorage';
@@ -845,7 +845,10 @@ export default function SessionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
+    // Initialize default exercises if needed
+    await initializeDefaultExercises();
+    
     setSessions(getSessions());
     setExercises(getExercises());
     setStories(getStories());
