@@ -8,13 +8,16 @@ import {
   updateSession, 
   deleteSession 
 } from '../../lib/sessionStorage';
-import { getExercises } from '../../lib/exerciseStorage';
+import { getExercises, initializeDefaultExercises } from '../../lib/exerciseStorage';
 import { getStories, isStoryId } from '../../lib/storyStorage';
 import { getPracticals, isPracticalId } from '../../lib/practicalStorage';
 import { getStoryBooks } from '../../lib/storyBookStorage';
 
 const CATEGORIES = ['Morgen', 'Abend', 'Kraft', 'Entspannung', 'Balance'];
 const LEVELS = ['Anfänger', 'Fortgeschritten', 'Alle Levels'];
+
+// Touch interaction constants
+const LONG_PRESS_DURATION = 200; // milliseconds to distinguish tap from long press
 
 // Card type constants
 const CARD_TYPES = {
@@ -243,6 +246,8 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
 
   // Touch event handlers for mobile drag and drop
   const touchStartY = useRef(null);
+  const touchStartX = useRef(null);
+  const touchStartTime = useRef(null);
   const longPressTimer = useRef(null);
   const [isDraggingTouch, setIsDraggingTouch] = useState(false);
   const [touchDraggedCardIndex, setTouchDraggedCardIndex] = useState(null);
@@ -252,6 +257,8 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
   const handleCardTouchStart = (e, card) => {
     const touch = e.touches[0];
     touchStartY.current = touch.clientY;
+    touchStartX.current = touch.clientX;
+    touchStartTime.current = Date.now();
     
     longPressTimer.current = setTimeout(() => {
       setDraggedCard(card);
@@ -259,7 +266,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-    }, 200);
+    }, LONG_PRESS_DURATION);
   };
 
   const handleCardTouchMove = (e) => {
@@ -299,13 +306,20 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
     }
   };
 
-  const handleCardTouchEnd = () => {
+  const handleCardTouchEnd = (card) => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
 
-    if (isDraggingTouch && draggedCard && touchDropIndicator !== null) {
+    // Detect if this was a quick tap (not a drag)
+    const touchDuration = Date.now() - (touchStartTime.current || 0);
+    const isQuickTap = touchDuration < LONG_PRESS_DURATION && !isDraggingTouch;
+
+    if (isQuickTap) {
+      // Quick tap - add card immediately
+      handleAddCard(card.id);
+    } else if (isDraggingTouch && draggedCard && touchDropIndicator !== null) {
       setFormData(prev => {
         const newExercises = [...prev.exercises];
         newExercises.splice(touchDropIndicator, 0, draggedCard.id);
@@ -319,6 +333,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
     setIsDraggingTouch(false);
     setDraggedCard(null);
     setTouchDropIndicator(null);
+    touchStartTime.current = null;
   };
 
   // Touch handlers for selected items reordering
@@ -333,7 +348,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-    }, 200);
+    }, LONG_PRESS_DURATION);
   };
 
   const handleItemTouchMove = (e, index) => {
@@ -621,7 +636,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
                     onDragEnd={handleCardDragEnd}
                     onTouchStart={(e) => handleCardTouchStart(e, card)}
                     onTouchMove={handleCardTouchMove}
-                    onTouchEnd={handleCardTouchEnd}
+                    onTouchEnd={() => handleCardTouchEnd(card)}
                     onClick={() => handleAddCard(card.id)}
                   >
                     <span className="card-type-icon">{config.icon}</span>
@@ -833,7 +848,15 @@ export default function SessionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
 
-  const loadData = useCallback(() => {
+  const loadData = useCallback(async () => {
+    try {
+      // Initialize default exercises if needed
+      await initializeDefaultExercises();
+    } catch (error) {
+      console.error('Failed to initialize default exercises:', error);
+      // Continue with loading existing data even if initialization fails
+    }
+    
     setSessions(getSessions());
     setExercises(getExercises());
     setStories(getStories());

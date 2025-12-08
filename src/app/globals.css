@@ -1113,6 +1113,10 @@ h1, h2, h3 {
 .exercise-name {
   flex: 1;
   font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .exercise-duration {
@@ -2618,7 +2622,8 @@ input.search-input:focus {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
-    touch-action: none;
+    /* Allow manipulation (pan/zoom) but handled by JS */
+    touch-action: manipulation;
   }
   
   /* Larger touch targets on mobile */
