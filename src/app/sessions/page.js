@@ -16,6 +16,9 @@ import { getStoryBooks } from '../../lib/storyBookStorage';
 const CATEGORIES = ['Morgen', 'Abend', 'Kraft', 'Entspannung', 'Balance'];
 const LEVELS = ['Anfänger', 'Fortgeschritten', 'Alle Levels'];
 
+// Touch interaction constants
+const LONG_PRESS_DURATION = 200; // milliseconds to distinguish tap from long press
+
 // Card type constants
 const CARD_TYPES = {
   EXERCISE: 'exercise',
@@ -263,7 +266,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-    }, 200);
+    }, LONG_PRESS_DURATION);
   };
 
   const handleCardTouchMove = (e) => {
@@ -311,7 +314,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
 
     // Detect if this was a quick tap (not a drag)
     const touchDuration = Date.now() - (touchStartTime.current || 0);
-    const isQuickTap = touchDuration < 200 && !isDraggingTouch;
+    const isQuickTap = touchDuration < LONG_PRESS_DURATION && !isDraggingTouch;
 
     if (isQuickTap) {
       // Quick tap - add card immediately
@@ -345,7 +348,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-    }, 200);
+    }, LONG_PRESS_DURATION);
   };
 
   const handleItemTouchMove = (e, index) => {
@@ -846,8 +849,13 @@ export default function SessionsPage() {
   const [editingSession, setEditingSession] = useState(null);
 
   const loadData = useCallback(async () => {
-    // Initialize default exercises if needed
-    await initializeDefaultExercises();
+    try {
+      // Initialize default exercises if needed
+      await initializeDefaultExercises();
+    } catch (error) {
+      console.error('Failed to initialize default exercises:', error);
+      // Continue with loading existing data even if initialization fails
+    }
     
     setSessions(getSessions());
     setExercises(getExercises());
