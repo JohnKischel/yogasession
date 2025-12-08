@@ -243,6 +243,8 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
 
   // Touch event handlers for mobile drag and drop
   const touchStartY = useRef(null);
+  const touchStartX = useRef(null);
+  const touchStartTime = useRef(null);
   const longPressTimer = useRef(null);
   const [isDraggingTouch, setIsDraggingTouch] = useState(false);
   const [touchDraggedCardIndex, setTouchDraggedCardIndex] = useState(null);
@@ -252,6 +254,8 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
   const handleCardTouchStart = (e, card) => {
     const touch = e.touches[0];
     touchStartY.current = touch.clientY;
+    touchStartX.current = touch.clientX;
+    touchStartTime.current = Date.now();
     
     longPressTimer.current = setTimeout(() => {
       setDraggedCard(card);
@@ -299,13 +303,20 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
     }
   };
 
-  const handleCardTouchEnd = () => {
+  const handleCardTouchEnd = (card) => {
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
 
-    if (isDraggingTouch && draggedCard && touchDropIndicator !== null) {
+    // Detect if this was a quick tap (not a drag)
+    const touchDuration = Date.now() - (touchStartTime.current || 0);
+    const isQuickTap = touchDuration < 200 && !isDraggingTouch;
+
+    if (isQuickTap) {
+      // Quick tap - add card immediately
+      handleAddCard(card.id);
+    } else if (isDraggingTouch && draggedCard && touchDropIndicator !== null) {
       setFormData(prev => {
         const newExercises = [...prev.exercises];
         newExercises.splice(touchDropIndicator, 0, draggedCard.id);
@@ -319,6 +330,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
     setIsDraggingTouch(false);
     setDraggedCard(null);
     setTouchDropIndicator(null);
+    touchStartTime.current = null;
   };
 
   // Touch handlers for selected items reordering
@@ -621,7 +633,7 @@ function SessionForm({ session, exercises, stories, practicals, storyBooks, onSu
                     onDragEnd={handleCardDragEnd}
                     onTouchStart={(e) => handleCardTouchStart(e, card)}
                     onTouchMove={handleCardTouchMove}
-                    onTouchEnd={handleCardTouchEnd}
+                    onTouchEnd={() => handleCardTouchEnd(card)}
                     onClick={() => handleAddCard(card.id)}
                   >
                     <span className="card-type-icon">{config.icon}</span>
